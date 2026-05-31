@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}مدیریت کاربران{% endblock %}
+
+{% block content %}
+<h2>لیست کاربران</h2>
+<a href="{{ url_for('admin.user_create') }}" class="btn btn-primary mb-3">+ کاربر جدید</a>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>کد</th>
+            <th>نام</th>
+            <th>نام خانوادگی</th>
+            <th>نام کاربری</th>
+            <th>ادمین</th>
+            <th>تأییدکننده</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.code }}</td>
+            <td>{{ user.first_name }}</td>
+            <td>{{ user.last_name }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ '✅' if user.is_admin else '❌' }}</td>
+            <td>{{ '✅' if user.is_approver else '❌' }}</td>
+            <td>
+                <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-sm btn-warning">ویرایش</a>
+                <form method="POST" action="{{ url_for('admin.user_delete', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('آیا از حذف این کاربر مطمئن هستید؟');">
+                    <button type="submit" class="btn btn-sm btn-danger" {% if user.id == current_user.id %}disabled{% endif %}>حذف</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,4 @@
+products.xlsx         ← لیست اسم قطعه‌ها
+machines.xlsx         ← لیست کد دستگاه‌ها
+operations.xlsx       ← لیست کد مرحله کاری‌ها
+titles.xlsx           ← لیست عنوان کار منوال

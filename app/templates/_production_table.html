@@ -1,0 +1,68 @@
+{# _production_table.html - جدول مشترک برای CNC و ManAll #}
+{% if reports %}
+<div class="table-responsive">
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>تاریخ</th>
+                <th>شیفت</th>
+                <th>قطعه</th>
+                {% if prod_type == 'CNC' %}
+                <th>سایز</th>
+                {% endif %}
+                <th>کد دستگاه</th>
+                <th>مرحله</th>
+                {% if prod_type == 'ManAll' %}
+                <th>عنوان کار</th>
+                {% endif %}
+                <th>تعداد</th>
+                <th>تأیید</th>
+                <th>شروع</th>
+                <th>پایان</th>
+                <th>مدت واقعی</th>
+                <th>زمان مورد انتظار</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in reports %}
+            <tr>
+                <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ r.shift }}</td>
+                <td>{{ r.product_name }}</td>
+                {% if prod_type == 'CNC' %}
+                <td>{{ r.part_size }}</td>
+                {% endif %}
+                <td>{{ r.machine_code }}</td>
+                <td>{{ r.operation_stage_code }}</td>
+                {% if prod_type == 'ManAll' %}
+                <td>{{ r.manual_title or '-' }}</td>
+                {% endif %}
+                <td>{{ r.quantity }}</td>
+                <td>
+                    {% if r.is_approved %}
+                        ✅ تأیید توسط <strong>{{ r.approved_by.full_name }}</strong>
+                        <br>تعداد تأییدشده: {{ r.approved_quantity }}
+                        {% if r.quantity_diff != 0 %}
+                            <br><span class="text-danger">مغایرت: {{ r.quantity_diff }}</span>
+                        {% endif %}
+                    {% else %}
+                        ⏳ در انتظار تأیید
+                    {% endif %}
+                </td>
+                <td>{{ r.start_time.strftime('%H:%M:%S') if r.start_time else '-' }}</td>
+                <td>{{ r.end_time.strftime('%H:%M:%S') if r.end_time else '-' }}</td>
+                <td>
+                    {{ r.duration if r.duration else '-' }}
+                    {% if r.duration_warning %}
+                        <span class="text-danger ms-1" title="مدت واقعی بیش از ۵٪ از زمان مورد انتظار بیشتر است!">⚠️</span>
+                    {% endif %}
+                </td>
+                <td>{{ r.expected_duration_formatted or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p>گزارشی یافت نشد.</p>
+{% endif %}

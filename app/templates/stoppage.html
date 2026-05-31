@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}گزارش توقف{% endblock %}
+
+{% block content %}
+<h2>گزارش توقف</h2>
+
+<form id="stoppage-start-form" onsubmit="return false;">
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">کد دستگاه</label>
+            <select class="form-select" id="machine_code" required>
+                <option value="">انتخاب کنید</option>
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">کد توقف</label>
+            <select class="form-select" id="stop_code" required>
+                <option value="">انتخاب کنید</option>
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">دلیل (اختیاری)</label>
+            <input type="text" class="form-control" id="reason" placeholder="توضیح دلیل توقف">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <label class="form-label fw-bold">⏱ زمان مورد انتظار توقف (ساعت:دقیقه:ثانیه)</label>
+            <div class="input-group">
+                <input type="number" class="form-control" id="expected_hours" placeholder="ساعت" min="0" value="0" required>
+                <span class="input-group-text">:</span>
+                <input type="number" class="form-control" id="expected_minutes" placeholder="دقیقه" min="0" max="59" value="0" required>
+                <span class="input-group-text">:</span>
+                <input type="number" class="form-control" id="expected_seconds" placeholder="ثانیه" min="0" max="59" value="0" required>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <button type="button" id="btn-start-stoppage" class="btn btn-success w-100">▶ شروع توقف</button>
+        </div>
+        <div class="col-md-6 mb-3">
+            <button type="button" id="btn-stop-stoppage" class="btn btn-danger w-100" disabled>⏹ پایان توقف</button>
+        </div>
+    </div>
+    <div class="text-center mb-3">
+        <div id="stoppage-timer-display" class="fs-1 fw-bold text-danger">00:00:00</div>
+        <small id="stoppage-start-time-label" class="text-muted"></small>
+    </div>
+    <div id="stoppage-message-area"></div>
+</form>
+
+<h5>گزارش‌های قبلی توقف</h5>
+<div class="table-responsive">
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>تاریخ ثبت</th>
+                <th>کد دستگاه</th>
+                <th>کد توقف</th>
+                <th>دلیل</th>
+                <th>شروع</th>
+                <th>پایان (راه‌اندازی)</th>
+                <th>مدت واقعی</th>
+                <th>زمان مورد انتظار</th>
+                <th>اختلاف</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in reports %}
+            <tr>
+                <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ r.machine_code }}</td>
+                <td>{{ r.stop_code }}</td>
+                <td>{{ r.reason or '-' }}</td>
+                <td>{{ r.start_time.strftime('%H:%M:%S') if r.start_time else '-' }}</td>
+                <td>{{ r.end_time.strftime('%H:%M:%S') if r.end_time else '-' }}</td>
+                <td>
+                    {{ r.duration or '-' }}
+                    {% if r.duration_warning %}
+                        <span class="text-danger ms-1" title="مدت واقعی بیش از ۵٪ از زمان مورد انتظار بیشتر است!">⚠️</span>
+                    {% endif %}
+                </td>
+                <td>{{ r.expected_duration_formatted or '-' }}</td>
+                <td>
+                    {% if r.time_diff_formatted %}
+                        <span class="{{ 'text-danger' if r.time_diff_is_positive else 'text-success' }}">
+                            {{ r.time_diff_formatted }}
+                        </span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const stoppageOptionsUrl = "{{ url_for('reports.stoppage_options') }}";
+    const stoppageStartUrl = "{{ url_for('reports.stoppage_start') }}";
+    const stoppageStopUrlBase = "{{ url_for('reports.stoppage_stop', report_id=999) }}".replace('999', '');
+    let timerInterval, startTime, currentId = null;
+
+    function formatTime(secs) {
+        const h = String(Math.floor(secs / 3600)).padStart(2, '0');
+        const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
+        const s = String(secs % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function updateTimer() {
+        const now = new Date();
+        document.getElementById('stoppage-timer-display').textContent = formatTime(Math.floor((now - startTime) / 1000));
+    }
+
+    function showMsg(msg, type = 'danger') {
+        const area = document.getElementById('stoppage-message-area');
+        area.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+        setTimeout(() => area.innerHTML = '', 5000);
+    }
+
+    function populateSelect(selectId, values, defaultText = 'انتخاب کنید') {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.innerHTML = `<option value="">${defaultText}</option>`;
+        values.forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            select.appendChild(opt);
+        });
+    }
+
+    async function loadOptions() {
+        try {
+            const resp = await fetch(stoppageOptionsUrl);
+            if (!resp.ok) throw new Error('Network error');
+            const options = await resp.json();
+            populateSelect('machine_code', options.machine_codes || []);
+            populateSelect('stop_code', options.stop_codes || []);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    document.getElementById('btn-start-stoppage').addEventListener('click', async () => {
+        if (!document.getElementById('stoppage-start-form').checkValidity()) {
+            showMsg('لطفاً همه فیلدهای الزامی را پر کنید.', 'danger');
+            return;
+        }
+        const machine_code = document.getElementById('machine_code').value;
+        const stop_code = document.getElementById('stop_code').value;
+        const reason = document.getElementById('reason').value.trim();
+        const expected_hours = document.getElementById('expected_hours').value;
+        const expected_minutes = document.getElementById('expected_minutes').value;
+        const expected_seconds = document.getElementById('expected_seconds').value;
+
+        try {
+            const resp = await fetch(stoppageStartUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    machine_code,
+                    stop_code,
+                    reason,
+                    expected_hours,
+                    expected_minutes,
+                    expected_seconds
+                })
+            });
+            const result = await resp.json();
+            if (resp.ok) {
+                currentId = result.report_id;
+                document.getElementById('stoppage-start-time-label').textContent = 'شروع: ' + result.start_time;
+                document.getElementById('btn-start-stoppage').disabled = true;
+                document.getElementById('btn-stop-stoppage').disabled = false;
+                startTime = new Date();
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+                showMsg('توقف شروع شد.', 'success');
+                document.querySelectorAll('#stoppage-start-form input, #stoppage-start-form select').forEach(el => el.disabled = true);
+            } else {
+                showMsg(result.error || 'خطا');
+            }
+        } catch (e) {
+            showMsg('خطای شبکه');
+        }
+    });
+
+    document.getElementById('btn-stop-stoppage').addEventListener('click', async () => {
+        if (!currentId) return;
+        try {
+            const resp = await fetch(stoppageStopUrlBase + currentId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await resp.json();
+            if (resp.ok) {
+                clearInterval(timerInterval);
+                document.getElementById('stoppage-timer-display').textContent = result.duration;
+                document.getElementById('stoppage-start-time-label').textContent +=
+                    ' | پایان: ' + result.end_time +
+                    ' | مدت: ' + result.duration;
+                document.getElementById('btn-start-stoppage').disabled = false;
+                document.getElementById('btn-stop-stoppage').disabled = true;
+                let msg = 'پایان توقف ثبت شد. مدت: ' + result.duration;
+                if (result.warning) {
+                    msg += ' (⚠️ اختلاف بیش از ۵٪ با زمان مورد انتظار)';
+                }
+                showMsg(msg, result.warning ? 'warning' : 'success');
+                document.querySelectorAll('#stoppage-start-form input, #stoppage-start-form select').forEach(el => el.disabled = false);
+                currentId = null;
+                location.reload();
+            } else {
+                showMsg(result.error || 'خطا');
+            }
+        } catch (e) {
+            showMsg('خطای شبکه');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadOptions);
+</script>
+{% endblock %}
