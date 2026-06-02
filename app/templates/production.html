@@ -107,7 +107,7 @@
                     {% for report in reports %}
                     <tr>
                         <td>{{ report.date.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td>{{ report.shift }}</td>
+                        <td>{{ report.shift_fa }}</td>
                         <td>{{ report.product_name }}</td>
                         <td>{{ report.part_size }}</td>
                         <td>{{ report.machine_code }}</td>
@@ -212,7 +212,7 @@
                     {% for report in reports %}
                     <tr>
                         <td>{{ report.date.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td>{{ report.shift }}</td>
+                        <td>{{ report.shift_fa }}</td>
                         <td>{{ report.product_name }}</td>
                         <td>{{ report.machine_code }}</td>
                         <td>{{ report.operation_stage_code }}</td>
@@ -235,7 +235,6 @@
         {% endif %}
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
@@ -250,7 +249,6 @@
     function updateTimer() { document.getElementById('timer-display').textContent = formatTime(Math.floor((new Date() - startTime)/1000)); }
     function showMessage(msg, type='danger') { const area = document.getElementById('message-area'); area.innerHTML = `<div class="alert alert-${type}">${msg}</div>`; setTimeout(() => area.innerHTML = '', 5000); }
 
-    // تابع جدید برای پر کردن select
     function populateSelect(selectId, values, defaultText = 'انتخاب کنید') {
         const select = document.getElementById(selectId);
         if (!select) return;
@@ -303,7 +301,7 @@
                 updateTimer();
                 timerInterval = setInterval(updateTimer, 1000);
                 showMessage('شروع شد.', 'success');
-                document.querySelectorAll('#cnc-start-form input:not([type=hidden]), #cnc-start-form select').forEach(el => el.disabled = true);
+                document.querySelectorAll('#cnc-start-form select, #cnc-start-form input').forEach(el => el.disabled = true);
             } else { showMessage(result.error || 'خطا'); }
         } catch(e) { showMessage('خطای شبکه'); }
     });
@@ -320,7 +318,7 @@
                 document.getElementById('btn-start').disabled = false;
                 document.getElementById('btn-stop').disabled = true;
                 showMessage('توقف انجام شد.', 'success');
-                document.querySelectorAll('#cnc-start-form input:not([type=hidden]), #cnc-start-form select').forEach(el => el.disabled = false);
+                document.querySelectorAll('#cnc-start-form select, #cnc-start-form input').forEach(el => el.disabled = false);
                 currentReportId = null;
                 location.reload();
             } else { showMessage(result.error || 'خطا'); }
@@ -393,7 +391,7 @@
                 manallUpdateTimer();
                 manallTimerInterval = setInterval(manallUpdateTimer, 1000);
                 manallShowMessage('شروع شد.', 'success');
-                document.querySelectorAll('#manall-start-form input:not([type=hidden]), #manall-start-form select').forEach(el => el.disabled = true);
+                document.querySelectorAll('#manall-start-form select, #manall-start-form input').forEach(el => el.disabled = true);
             } else { manallShowMessage(result.error || 'خطا'); }
         } catch(e) { manallShowMessage('خطای شبکه'); }
     });
@@ -410,7 +408,7 @@
                 document.getElementById('manall-btn-start').disabled = false;
                 document.getElementById('manall-btn-stop').disabled = true;
                 manallShowMessage('توقف انجام شد.', 'success');
-                document.querySelectorAll('#manall-start-form input:not([type=hidden]), #manall-start-form select').forEach(el => el.disabled = false);
+                document.querySelectorAll('#manall-start-form select, #manall-start-form input').forEach(el => el.disabled = false);
                 manallCurrentReportId = null;
                 location.reload();
             } else { manallShowMessage(result.error || 'خطا'); }

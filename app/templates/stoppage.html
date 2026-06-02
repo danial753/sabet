@@ -24,6 +24,7 @@
         </div>
     </div>
 
+    <!-- زمان مورد انتظار (مانند قبل) -->
     <div class="row">
         <div class="col-md-12 mb-3">
             <label class="form-label fw-bold">⏱ زمان مورد انتظار توقف (ساعت:دقیقه:ثانیه)</label>
@@ -39,10 +40,10 @@
 
     <div class="row">
         <div class="col-md-6 mb-3">
-            <button type="button" id="btn-start-stoppage" class="btn btn-success w-100">▶ شروع توقف</button>
+            <button type="button" id="btn-start-stoppage" class="btn btn-danger w-100">⏹ ثبت توقف</button>
         </div>
         <div class="col-md-6 mb-3">
-            <button type="button" id="btn-stop-stoppage" class="btn btn-danger w-100" disabled>⏹ پایان توقف</button>
+            <button type="button" id="btn-stop-stoppage" class="btn btn-success w-100" disabled>▶ ثبت راه‌اندازی</button>
         </div>
     </div>
     <div class="text-center mb-3">
@@ -61,9 +62,9 @@
                 <th>کد دستگاه</th>
                 <th>کد توقف</th>
                 <th>دلیل</th>
-                <th>شروع</th>
-                <th>پایان (راه‌اندازی)</th>
-                <th>مدت واقعی</th>
+                <th>زمان توقف</th>
+                <th>زمان راه‌اندازی</th>
+                <th>مدت توقف</th>
                 <th>زمان مورد انتظار</th>
                 <th>اختلاف</th>
             </tr>
@@ -77,12 +78,7 @@
                 <td>{{ r.reason or '-' }}</td>
                 <td>{{ r.start_time.strftime('%H:%M:%S') if r.start_time else '-' }}</td>
                 <td>{{ r.end_time.strftime('%H:%M:%S') if r.end_time else '-' }}</td>
-                <td>
-                    {{ r.duration or '-' }}
-                    {% if r.duration_warning %}
-                        <span class="text-danger ms-1" title="مدت واقعی بیش از ۵٪ از زمان مورد انتظار بیشتر است!">⚠️</span>
-                    {% endif %}
-                </td>
+                <td>{{ r.duration or '-' }}</td>
                 <td>{{ r.expected_duration_formatted or '-' }}</td>
                 <td>
                     {% if r.time_diff_formatted %}
@@ -177,13 +173,13 @@
             const result = await resp.json();
             if (resp.ok) {
                 currentId = result.report_id;
-                document.getElementById('stoppage-start-time-label').textContent = 'شروع: ' + result.start_time;
+                document.getElementById('stoppage-start-time-label').textContent = 'زمان توقف: ' + result.start_time;
                 document.getElementById('btn-start-stoppage').disabled = true;
                 document.getElementById('btn-stop-stoppage').disabled = false;
                 startTime = new Date();
                 updateTimer();
                 timerInterval = setInterval(updateTimer, 1000);
-                showMsg('توقف شروع شد.', 'success');
+                showMsg('زمان توقف ثبت شد.', 'success');
                 document.querySelectorAll('#stoppage-start-form input, #stoppage-start-form select').forEach(el => el.disabled = true);
             } else {
                 showMsg(result.error || 'خطا');
@@ -205,11 +201,11 @@
                 clearInterval(timerInterval);
                 document.getElementById('stoppage-timer-display').textContent = result.duration;
                 document.getElementById('stoppage-start-time-label').textContent +=
-                    ' | پایان: ' + result.end_time +
-                    ' | مدت: ' + result.duration;
+                    ' | زمان راه‌اندازی: ' + result.end_time +
+                    ' | مدت توقف: ' + result.duration;
                 document.getElementById('btn-start-stoppage').disabled = false;
                 document.getElementById('btn-stop-stoppage').disabled = true;
-                let msg = 'پایان توقف ثبت شد. مدت: ' + result.duration;
+                let msg = 'زمان راه‌اندازی ثبت شد. مدت توقف: ' + result.duration;
                 if (result.warning) {
                     msg += ' (⚠️ اختلاف بیش از ۵٪ با زمان مورد انتظار)';
                 }

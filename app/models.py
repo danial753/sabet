@@ -55,6 +55,11 @@ class ProductionReport(db.Model):
     approved_by = db.relationship('User', foreign_keys=[approved_by_id], lazy=True)
 
     @property
+    def shift_fa(self):
+        mapping = {'A': 'صبح', 'B': 'ظهر', 'C': 'شب'}
+        return mapping.get(self.shift, self.shift or '-')
+
+    @property
     def duration_seconds(self):
         if self.start_time and self.end_time:
             return int((self.end_time - self.start_time).total_seconds())

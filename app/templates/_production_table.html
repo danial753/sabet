@@ -27,7 +27,7 @@
             {% for r in reports %}
             <tr>
                 <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>{{ r.shift }}</td>
+                <td>{{ r.shift_fa }}</td>
                 <td>{{ r.product_name }}</td>
                 {% if prod_type == 'CNC' %}
                 <td>{{ r.part_size }}</td>

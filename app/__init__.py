@@ -24,16 +24,21 @@ def create_app():
     from app.auth.routes import auth_bp
     from app.reports.routes import reports_bp
     from app.admin.routes import admin_bp
+    from app.admin_report.routes import admin_report_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(reports_bp, url_prefix='/reports')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(admin_report_bp, url_prefix='/admin')
 
+    # مسیر اصلی (ریشه)
     @app.route('/')
     def index():
         if current_user.is_authenticated:
             if current_user.is_admin:
                 return redirect(url_for('admin.view_user_reports'))
+            if current_user.is_approver:
+                return redirect(url_for('reports.approver_dashboard'))
             return redirect(url_for('reports.dashboard'))
         return redirect(url_for('auth.login'))
 
