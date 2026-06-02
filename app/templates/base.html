@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}پنل مدیریت آذین{% endblock %}</title>
+    <!-- Bootstrap 5.3 RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- تم سفارشی -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('reports.dashboard') }}">
+                <i class="fas fa-industry me-2"></i>آذین
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_operator %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.dashboard') }}"><i class="fas fa-tachometer-alt me-1"></i>داشبورد</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.production') }}"><i class="fas fa-cogs me-1"></i>تولید</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.stoppage') }}"><i class="fas fa-pause-circle me-1"></i>توقف</a></li>
+                        {% endif %}
+                        {% if current_user.is_approver %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.approver_dashboard') }}"><i class="fas fa-check-double me-1"></i>تأیید گزارش</a></li>
+                        {% endif %}
+                        {% if current_user.is_admin %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="fas fa-user-shield me-1"></i>ادمین</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('admin.user_list') }}"><i class="fas fa-users-cog me-1"></i>مدیریت کاربران</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.view_user_reports') }}"><i class="fas fa-search me-1"></i>مشاهده گزارش کاربر</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_report.general_report_form') }}"><i class="fas fa-file-excel me-1"></i>گزارش جامع</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.advanced_report') }}"><i class="fas fa-filter me-1"></i>گزارش پیشرفته</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('analytics.dashboard') }}"><i class="fas fa-chart-pie me-1"></i>داشبورد تحلیلی</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.system_logs') }}"><i class="fas fa-history me-1"></i>لاگ سیستم</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.config') }}"><i class="fas fa-sliders-h me-1"></i>تنظیمات</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('profile.view') }}"><i class="fas fa-id-card me-1"></i>پروفایل</a></li>
+                        <li class="nav-item"><span class="nav-link text-warning fw-bold">{{ current_user.full_name }}</span></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-1"></i>خروج</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt me-1"></i>ورود</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-1"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <div class="footer mt-5">
+        <span>تمامی حقوق محفوظ است © ۱۴۰۵ | شرکت آذین</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

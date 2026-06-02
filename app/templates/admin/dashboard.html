@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}داشبورد تحلیلی{% endblock %}
+
+{% block head_extra %}
+<style>
+    .summary-card { border-radius: 15px; transition: transform 0.2s; }
+    .summary-card:hover { transform: scale(1.03); }
+    .chart-container { position: relative; margin: auto; height: 300px; }
+    .table-fixed { max-height: 400px; overflow-y: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>داشبورد مدیریتی</h2>
+
+<!-- فیلترها -->
+<form id="filter-form" class="row g-2 mb-4">
+    <div class="col-md-2">
+        <label class="form-label">از تاریخ</label>
+        <input type="date" class="form-control" id="start_date" name="start_date">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">تا تاریخ</label>
+        <input type="date" class="form-control" id="end_date" name="end_date">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">شیفت</label>
+        <select class="form-select" id="shift" name="shift">
+            <option value="">همه</option>
+            <option value="A">صبح</option>
+            <option value="B">ظهر</option>
+            <option value="C">شب</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">ماشین</label>
+        <select class="form-select" id="machine" name="machine">
+            <option value="">همه</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">قطعه</label>
+        <select class="form-select" id="product" name="product">
+            <option value="">همه</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="button" class="btn btn-primary w-100" onclick="loadDashboard()">اعمال فیلتر</button>
+    </div>
+</form>
+
+<!-- کارت‌های خلاصه -->
+<div class="row mb-4" id="summary-cards">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary summary-card">
+            <div class="card-body">
+                <h6>تعداد تولید</h6>
+                <h3 id="total-prod">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger summary-card">
+            <div class="card-body">
+                <h6>تعداد توقف</h6>
+                <h3 id="total-stop">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success summary-card">
+            <div class="card-body">
+                <h6>میانگین زمان توقف (دقیقه)</h6>
+                <h3 id="avg-stop">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning summary-card">
+            <div class="card-body">
+                <h6>OEE (دسترسی)</h6>
+                <h3 id="oee">-</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نمودارها -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">تولید بر اساس شیفت</h5>
+                <div class="chart-container">
+                    <canvas id="shiftChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">تولید بر اساس ماشین</h5>
+                <div class="chart-container">
+                    <canvas id="machineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">پربازده‌ترین قطعات</h5>
+                <div class="chart-container">
+                    <canvas id="productChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">توقف بر اساس ماشین</h5>
+                <div class="chart-container">
+                    <canvas id="stopMachineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let shiftChart, machineChart, productChart, stopMachineChart;
+
+    async function loadDashboard() {
+        const params = new URLSearchParams();
+        const start = document.getElementById('start_date').value;
+        const end = document.getElementById('end_date').value;
+        const shift = document.getElementById('shift').value;
+        const machine = document.getElementById('machine').value;
+        const product = document.getElementById('product').value;
+        if (start) params.append('start_date', start);
+        if (end) params.append('end_date', end);
+        if (shift) params.append('shift', shift);
+        if (machine) params.append('machine', machine);
+        if (product) params.append('product', product);
+
+        try {
+            const resp = await fetch(`/admin/api/dashboard-data?${params.toString()}`);
+            const data = await resp.json();
+
+            // کارت‌های خلاصه
+            document.getElementById('total-prod').innerText = data.summary.total_production;
+            document.getElementById('total-stop').innerText = data.summary.total_stoppage;
+            document.getElementById('avg-stop').innerText = data.summary.avg_stop_time;
+            document.getElementById('oee').innerText = data.summary.availability + '%';
+
+            // پر کردن لیست‌های فیلتر (در اولین بار)
+            if (!data.filters) return;
+            const machineSelect = document.getElementById('machine');
+            const productSelect = document.getElementById('product');
+            if (machineSelect.options.length <= 1) {
+                data.filters.machines.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m; opt.textContent = m;
+                    machineSelect.appendChild(opt);
+                });
+            }
+            if (productSelect.options.length <= 1) {
+                data.filters.products.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p; opt.textContent = p;
+                    productSelect.appendChild(opt);
+                });
+            }
+
+            // نمودار شیفت
+            const shiftLabels = Object.keys(data.production_by_shift);
+            const shiftValues = Object.values(data.production_by_shift);
+            if (shiftChart) shiftChart.destroy();
+            const ctx1 = document.getElementById('shiftChart').getContext('2d');
+            shiftChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: shiftLabels,
+                    datasets: [{ data: shiftValues, backgroundColor: ['#ffc107','#0d6efd','#198754'] }]
+                }
+            });
+
+            // نمودار ماشین
+            const machineLabels = data.production_by_machine.map(m => m.machine);
+            const machineCounts = data.production_by_machine.map(m => m.count);
+            if (machineChart) machineChart.destroy();
+            const ctx2 = document.getElementById('machineChart').getContext('2d');
+            machineChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: machineLabels,
+                    datasets: [{ label: 'تعداد', data: machineCounts, backgroundColor: '#0d6efd' }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+
+            // نمودار قطعات
+            const productLabels = data.top_products.map(p => p.product);
+            const productCounts = data.top_products.map(p => p.count);
+            if (productChart) productChart.destroy();
+            const ctx3 = document.getElementById('productChart').getContext('2d');
+            productChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: productLabels,
+                    datasets: [{ label: 'تعداد', data: productCounts, backgroundColor: '#198754' }]
+                },
+                options: { indexAxis: 'y', scales: { x: { beginAtZero: true } } }
+            });
+
+            // نمودار توقف
+            const stopMachineLabels = data.stoppage_by_machine.map(m => m.machine);
+            const stopMachineCounts = data.stoppage_by_machine.map(m => m.count);
+            if (stopMachineChart) stopMachineChart.destroy();
+            const ctx4 = document.getElementById('stopMachineChart').getContext('2d');
+            stopMachineChart = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: stopMachineLabels,
+                    datasets: [{ label: 'تعداد توقف', data: stopMachineCounts, backgroundColor: '#dc3545' }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+
+        } catch (err) {
+            console.error('خطا در بارگذاری داده‌ها', err);
+        }
+    }
+
+    // بارگذاری اولیه
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}

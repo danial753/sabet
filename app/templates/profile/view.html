@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}پروفایل کاربری{% endblock %}
+{% block content %}
+<h2>پروفایل کاربری</h2>
+<div class="card">
+    <div class="card-body">
+        <p><strong>نام:</strong> {{ user.first_name }}</p>
+        <p><strong>نام خانوادگی:</strong> {{ user.last_name }}</p>
+        <p><strong>نام کامل:</strong> {{ user.full_name }}</p>
+        <p><strong>کد:</strong> {{ user.code }}</p>
+        <p><strong>نام کاربری:</strong> {{ user.username }}</p>
+        <p><strong>کارخانه:</strong> {{ user.factory.name if user.factory else '-' }}</p>
+        <p><strong>نقش:</strong>
+            {% if user.is_admin %}ادمین
+            {% elif user.is_approver %}تأییدکننده
+            {% else %}اپراتور
+            {% endif %}
+        </p>
+        <a href="{{ url_for('profile.edit') }}" class="btn btn-primary">ویرایش اطلاعات</a>
+        <a href="{{ url_for('profile.change_password') }}" class="btn btn-warning">تغییر رمز عبور</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}داشبورد{% endblock %}
+{% block content %}
+<h1 class="mb-4">بخش گزارش‌ها</h1>
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">📦 گزارش تولید</h5>
+                <p class="card-text">ثبت و مشاهده‌ی آمار تولید</p>
+                <a href="{{ url_for('reports.production') }}" class="btn btn-success">ورود</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">🛑 گزارش توقف</h5>
+                <p class="card-text">ثبت و مشاهده‌ی توقفات خط تولید</p>
+                <a href="{{ url_for('reports.stoppage') }}" class="btn btn-danger">ورود</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

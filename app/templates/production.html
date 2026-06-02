@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% block title %}گزارش تولید{% endblock %}
+
+{% block content %}
+<style>
+    .timer-display { font-size: 2.5rem; font-weight: bold; color: #0d6efd; margin: 0; }
+    .tab-content { padding-top: 1rem; }
+    .message-area { min-height: 2rem; }
+    .table-responsive { margin-top: 1.5rem; }
+    .warning-icon { color: red; margin-left: 4px; font-weight: bold; cursor: help; }
+</style>
+
+<h2>گزارش تولید</h2>
+
+<ul class="nav nav-tabs mb-4" id="productionTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if prod_type == 'CNC' else '' }}" href="{{ url_for('reports.production', prod_type='CNC') }}">CNC</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if prod_type == 'ManAll' else '' }}" href="{{ url_for('reports.production', prod_type='ManAll') }}">Manual</a>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" role="tabpanel">
+        {% if prod_type == 'CNC' %}
+        <!-- ================ CNC ================ -->
+        <h4>ثبت و زمان‌سنجی CNC</h4>
+        <form id="cnc-start-form" onsubmit="return false;">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">اسم قطعه</label>
+                    <select class="form-select" id="product_name" required>
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">شیفت</label>
+                    <select class="form-select" id="shift" required>
+                        <option value="">انتخاب</option>
+                        <option value="A">صبح</option>
+                        <option value="B">ظهر</option>
+                        <option value="C">شب</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">سایز قطعه</label>
+                    <select class="form-select" id="part_size" required>
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">کد دستگاه</label>
+                    <select class="form-select" id="machine_code" required>
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">کد مرحله کاری</label>
+                    <select class="form-select" id="operation_stage_code" required>
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">تعداد</label>
+                    <input type="number" class="form-control" id="quantity" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">⏱ زمان مورد انتظار (ثانیه:دقیقه:ساعت)</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="expected_seconds" placeholder="ثانیه" min="0" max="59" value="0" required>
+                        <span class="input-group-text">:</span>
+                        <input type="number" class="form-control" id="expected_minutes" placeholder="دقیقه" min="0" max="59" value="0" required>
+                        <span class="input-group-text">:</span>
+                        <input type="number" class="form-control" id="expected_hours" placeholder="ساعت" min="0" value="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <button type="button" id="btn-start" class="btn btn-success w-100">▶ شروع</button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button type="button" id="btn-stop" class="btn btn-danger w-100" disabled>⏹ توقف</button>
+                </div>
+            </div>
+            <div class="text-center mb-3">
+                <div id="timer-display" class="timer-display">00:00:00</div>
+                <small id="start-time-label" class="text-muted"></small>
+            </div>
+            <div id="message-area" class="message-area"></div>
+        </form>
+
+        <h5>گزارش‌های قبلی CNC</h5>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>تاریخ</th><th>شیفت</th><th>قطعه</th><th>سایز</th><th>کد دستگاه</th><th>مرحله</th><th>تعداد</th><th>شروع</th><th>پایان</th><th>مدت واقعی</th><th>زمان مورد انتظار</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>{{ report.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ report.shift_fa }}</td>
+                        <td>{{ report.product_name }}</td>
+                        <td>{{ report.part_size }}</td>
+                        <td>{{ report.machine_code }}</td>
+                        <td>{{ report.operation_stage_code }}</td>
+                        <td>{{ report.quantity }}</td>
+                        <td>{{ report.start_time.strftime('%H:%M:%S') if report.start_time else '-' }}</td>
+                        <td>{{ report.end_time.strftime('%H:%M:%S') if report.end_time else '-' }}</td>
+                        <td>
+                            {{ report.duration if report.duration else '-' }}
+                            {% if report.duration_warning %}
+                                <span class="warning-icon" title="مدت واقعی بیش از ۵٪ از زمان مورد انتظار بیشتر است!">⚠️</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ report.expected_duration_formatted if report.expected_duration_formatted else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <!-- ================ Manual ================ -->
+        <h4>ثبت و زمان‌سنجی Manual</h4>
+        <form id="manall-start-form" onsubmit="return false;">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">اسم قطعه</label>
+                    <select class="form-select" id="manall_product_name" required>
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">شیفت</label>
+                    <select class="form-select" id="manall_shift" required>
+                        <option value="">انتخاب</option>
+                        <option value="A">صبح</option>
+                        <option value="B">ظهر</option>
+                        <option value="C">شب</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">کد دستگاه</label>
+                    <select class="form-select" id="manall_machine_code" required>
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">کد مرحله کاری</label>
+                    <select class="form-select" id="manall_operation_stage_code" required>
+                        <option value="">انتخاب کنید</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">عنوان کار منوال</label>
+                    <select class="form-select" id="manall_manual_title">
+                        <option value="">انتخاب کنید (اختیاری)</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">تعداد</label>
+                    <input type="number" class="form-control" id="manall_quantity" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">⏱ زمان مورد انتظار (ثانیه:دقیقه:ساعت)</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="manall_expected_seconds" placeholder="ثانیه" min="0" max="59" value="0" required>
+                        <span class="input-group-text">:</span>
+                        <input type="number" class="form-control" id="manall_expected_minutes" placeholder="دقیقه" min="0" max="59" value="0" required>
+                        <span class="input-group-text">:</span>
+                        <input type="number" class="form-control" id="manall_expected_hours" placeholder="ساعت" min="0" value="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <button type="button" id="manall-btn-start" class="btn btn-success w-100">▶ شروع</button>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <button type="button" id="manall-btn-stop" class="btn btn-danger w-100" disabled>⏹ توقف</button>
+                </div>
+            </div>
+            <div class="text-center mb-3">
+                <div id="manall-timer-display" class="timer-display">00:00:00</div>
+                <small id="manall-start-time-label" class="text-muted"></small>
+            </div>
+            <div id="manall-message-area" class="message-area"></div>
+        </form>
+
+        <h5>گزارش‌های قبلی Manual</h5>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>تاریخ</th><th>شیفت</th><th>قطعه</th><th>کد دستگاه</th><th>مرحله</th><th>عنوان کار</th><th>تعداد</th><th>شروع</th><th>پایان</th><th>مدت واقعی</th><th>زمان مورد انتظار</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>{{ report.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ report.shift_fa }}</td>
+                        <td>{{ report.product_name }}</td>
+                        <td>{{ report.machine_code }}</td>
+                        <td>{{ report.operation_stage_code }}</td>
+                        <td>{{ report.manual_title if report.manual_title else '-' }}</td>
+                        <td>{{ report.quantity }}</td>
+                        <td>{{ report.start_time.strftime('%H:%M:%S') if report.start_time else '-' }}</td>
+                        <td>{{ report.end_time.strftime('%H:%M:%S') if report.end_time else '-' }}</td>
+                        <td>
+                            {{ report.duration if report.duration else '-' }}
+                            {% if report.duration_warning %}
+                                <span class="warning-icon" title="مدت واقعی بیش از ۵٪ از زمان مورد انتظار بیشتر است!">⚠️</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ report.expected_duration_formatted if report.expected_duration_formatted else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if prod_type == 'CNC' %}
+<script>
+    const cncOptionsUrl = "{{ url_for('reports.cnc_options') }}";
+    const cncStartUrl = "{{ url_for('reports.cnc_start') }}";
+    const cncStopUrlBase = "{{ url_for('reports.cnc_stop', report_id=999) }}".replace('999', '');
+    let timerInterval, startTime, currentReportId = null;
+
+    function formatTime(secs) { const h = String(Math.floor(secs/3600)).padStart(2,'0'); const m = String(Math.floor((secs%3600)/60)).padStart(2,'0'); const s = String(secs%60).padStart(2,'0'); return `${h}:${m}:${s}`; }
+    function updateTimer() { document.getElementById('timer-display').textContent = formatTime(Math.floor((new Date() - startTime)/1000)); }
+    function showMessage(msg, type='danger') { const area = document.getElementById('message-area'); area.innerHTML = `<div class="alert alert-${type}">${msg}</div>`; setTimeout(() => area.innerHTML = '', 5000); }
+
+    function populateSelect(selectId, values, defaultText = 'انتخاب کنید') {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.innerHTML = `<option value="">${defaultText}</option>`;
+        values.forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            select.appendChild(opt);
+        });
+    }
+
+    async function loadCNCOptions() {
+        try {
+            const resp = await fetch(cncOptionsUrl);
+            if (!resp.ok) throw new Error('Network error');
+            const options = await resp.json();
+            populateSelect('product_name', options.product_names || []);
+            populateSelect('part_size', options.part_sizes || []);
+            populateSelect('machine_code', options.machine_codes || []);
+            populateSelect('operation_stage_code', options.operation_stage_codes || []);
+        } catch(e) { console.error(e); }
+    }
+
+    document.getElementById('btn-start').addEventListener('click', async () => {
+        if (!document.getElementById('cnc-start-form').checkValidity()) {
+            showMessage('لطفاً همه فیلدها را پر کنید.', 'danger');
+            return;
+        }
+        const data = {
+            product_name: document.getElementById('product_name').value,
+            shift: document.getElementById('shift').value,
+            part_size: document.getElementById('part_size').value,
+            machine_code: document.getElementById('machine_code').value,
+            operation_stage_code: document.getElementById('operation_stage_code').value,
+            quantity: document.getElementById('quantity').value,
+            expected_hours: document.getElementById('expected_hours').value,
+            expected_minutes: document.getElementById('expected_minutes').value,
+            expected_seconds: document.getElementById('expected_seconds').value
+        };
+        try {
+            const resp = await fetch(cncStartUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+            const result = await resp.json();
+            if (resp.ok) {
+                currentReportId = result.report_id;
+                document.getElementById('start-time-label').textContent = 'شروع: ' + result.start_time;
+                document.getElementById('btn-start').disabled = true;
+                document.getElementById('btn-stop').disabled = false;
+                startTime = new Date();
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+                showMessage('شروع شد.', 'success');
+                document.querySelectorAll('#cnc-start-form select, #cnc-start-form input').forEach(el => el.disabled = true);
+            } else { showMessage(result.error || 'خطا'); }
+        } catch(e) { showMessage('خطای شبکه'); }
+    });
+
+    document.getElementById('btn-stop').addEventListener('click', async () => {
+        if (!currentReportId) return;
+        try {
+            const resp = await fetch(cncStopUrlBase + currentReportId, { method:'POST', headers:{'Content-Type':'application/json'} });
+            const result = await resp.json();
+            if (resp.ok) {
+                clearInterval(timerInterval);
+                document.getElementById('timer-display').textContent = result.duration;
+                document.getElementById('start-time-label').textContent += ' | پایان: ' + result.end_time + ' | مدت: ' + result.duration;
+                document.getElementById('btn-start').disabled = false;
+                document.getElementById('btn-stop').disabled = true;
+                showMessage('توقف انجام شد.', 'success');
+                document.querySelectorAll('#cnc-start-form select, #cnc-start-form input').forEach(el => el.disabled = false);
+                currentReportId = null;
+                location.reload();
+            } else { showMessage(result.error || 'خطا'); }
+        } catch(e) { showMessage('خطای شبکه'); }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadCNCOptions);
+</script>
+
+{% elif prod_type == 'ManAll' %}
+<script>
+    const manallOptionsUrl = "{{ url_for('reports.manall_options') }}";
+    const manallStartUrl = "{{ url_for('reports.manall_start') }}";
+    const manallStopUrlBase = "{{ url_for('reports.manall_stop', report_id=999) }}".replace('999', '');
+    let manallTimerInterval, manallStartTime, manallCurrentReportId = null;
+
+    function manallFormatTime(secs) { const h = String(Math.floor(secs/3600)).padStart(2,'0'); const m = String(Math.floor((secs%3600)/60)).padStart(2,'0'); const s = String(secs%60).padStart(2,'0'); return `${h}:${m}:${s}`; }
+    function manallUpdateTimer() { document.getElementById('manall-timer-display').textContent = manallFormatTime(Math.floor((new Date() - manallStartTime)/1000)); }
+    function manallShowMessage(msg, type='danger') { const area = document.getElementById('manall-message-area'); area.innerHTML = `<div class="alert alert-${type}">${msg}</div>`; setTimeout(() => area.innerHTML = '', 5000); }
+
+    function populateSelect(selectId, values, defaultText = 'انتخاب کنید') {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.innerHTML = `<option value="">${defaultText}</option>`;
+        values.forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            select.appendChild(opt);
+        });
+    }
+
+    async function loadManAllOptions() {
+        try {
+            const resp = await fetch(manallOptionsUrl);
+            if (!resp.ok) throw new Error('Network error');
+            const options = await resp.json();
+            populateSelect('manall_product_name', options.product_names || []);
+            populateSelect('manall_machine_code', options.machine_codes || []);
+            populateSelect('manall_operation_stage_code', options.operation_stage_codes || []);
+            populateSelect('manall_manual_title', options.manual_titles || [], 'انتخاب کنید (اختیاری)');
+        } catch(e) { console.error(e); }
+    }
+
+    document.getElementById('manall-btn-start').addEventListener('click', async () => {
+        if (!document.getElementById('manall-start-form').checkValidity()) {
+            manallShowMessage('لطفاً همه فیلدهای اجباری را پر کنید.', 'danger');
+            return;
+        }
+        const data = {
+            product_name: document.getElementById('manall_product_name').value,
+            shift: document.getElementById('manall_shift').value,
+            machine_code: document.getElementById('manall_machine_code').value,
+            operation_stage_code: document.getElementById('manall_operation_stage_code').value,
+            manual_title: document.getElementById('manall_manual_title').value,
+            quantity: document.getElementById('manall_quantity').value,
+            expected_hours: document.getElementById('manall_expected_hours').value,
+            expected_minutes: document.getElementById('manall_expected_minutes').value,
+            expected_seconds: document.getElementById('manall_expected_seconds').value
+        };
+        try {
+            const resp = await fetch(manallStartUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+            const result = await resp.json();
+            if (resp.ok) {
+                manallCurrentReportId = result.report_id;
+                document.getElementById('manall-start-time-label').textContent = 'شروع: ' + result.start_time;
+                document.getElementById('manall-btn-start').disabled = true;
+                document.getElementById('manall-btn-stop').disabled = false;
+                manallStartTime = new Date();
+                manallUpdateTimer();
+                manallTimerInterval = setInterval(manallUpdateTimer, 1000);
+                manallShowMessage('شروع شد.', 'success');
+                document.querySelectorAll('#manall-start-form select, #manall-start-form input').forEach(el => el.disabled = true);
+            } else { manallShowMessage(result.error || 'خطا'); }
+        } catch(e) { manallShowMessage('خطای شبکه'); }
+    });
+
+    document.getElementById('manall-btn-stop').addEventListener('click', async () => {
+        if (!manallCurrentReportId) return;
+        try {
+            const resp = await fetch(manallStopUrlBase + manallCurrentReportId, { method:'POST', headers:{'Content-Type':'application/json'} });
+            const result = await resp.json();
+            if (resp.ok) {
+                clearInterval(manallTimerInterval);
+                document.getElementById('manall-timer-display').textContent = result.duration;
+                document.getElementById('manall-start-time-label').textContent += ' | پایان: ' + result.end_time + ' | مدت: ' + result.duration;
+                document.getElementById('manall-btn-start').disabled = false;
+                document.getElementById('manall-btn-stop').disabled = true;
+                manallShowMessage('توقف انجام شد.', 'success');
+                document.querySelectorAll('#manall-start-form select, #manall-start-form input').forEach(el => el.disabled = false);
+                manallCurrentReportId = null;
+                location.reload();
+            } else { manallShowMessage(result.error || 'خطا'); }
+        } catch(e) { manallShowMessage('خطای شبکه'); }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadManAllOptions);
+</script>
+{% endif %}
+{% endblock %}

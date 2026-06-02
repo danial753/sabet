@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}مدیریت کاربران{% endblock %}
+
+{% block content %}
+<h2>لیست کاربران</h2>
+
+<!-- جستجو و فیلتر -->
+<form method="GET" class="mb-4">
+    <div class="row">
+        <div class="col-md-4 mb-2">
+            <input type="text" class="form-control" name="q" placeholder="جستجو بر اساس نام، کد یا نام کاربری..." value="{{ q }}">
+        </div>
+        <div class="col-md-3 mb-2">
+            <select class="form-select" name="role">
+                <option value="">همه نقش‌ها</option>
+                <option value="admin" {% if role == 'admin' %}selected{% endif %}>ادمین</option>
+                <option value="approver" {% if role == 'approver' %}selected{% endif %}>تأییدکننده</option>
+                <option value="operator" {% if role == 'operator' %}selected{% endif %}>اپراتور</option>
+            </select>
+        </div>
+        <div class="col-md-2 mb-2">
+            <button type="submit" class="btn btn-primary w-100">اعمال</button>
+        </div>
+        <div class="col-md-2 mb-2">
+            <a href="{{ url_for('admin.user_create') }}" class="btn btn-success w-100">+ کاربر جدید</a>
+        </div>
+    </div>
+</form>
+
+<form id="delete-form" method="POST" action="{{ url_for('admin.user_delete_multiple') }}">
+    <div class="mb-3">
+        <button type="button" id="select-all-btn" class="btn btn-sm btn-outline-secondary">انتخاب همه</button>
+        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('آیا از حذف کاربران انتخاب‌شده مطمئن هستید؟')">حذف انتخاب‌شده‌ها</button>
+    </div>
+
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th><input type="checkbox" id="select-all-checkbox"></th>
+                <th><a href="?sort=code&order={% if sort=='code' and order=='asc' %}desc{% else %}asc{% endif %}&q={{ q }}&role={{ role }}">کد</a></th>
+                <th><a href="?sort=first_name&order={% if sort=='first_name' and order=='asc' %}desc{% else %}asc{% endif %}&q={{ q }}&role={{ role }}">نام</a></th>
+                <th><a href="?sort=last_name&order={% if sort=='last_name' and order=='asc' %}desc{% else %}asc{% endif %}&q={{ q }}&role={{ role }}">نام خانوادگی</a></th>
+                <th><a href="?sort=username&order={% if sort=='username' and order=='asc' %}desc{% else %}asc{% endif %}&q={{ q }}&role={{ role }}">نام کاربری</a></th>
+                <th>کارخانه</th>
+                <th>ادمین</th>
+                <th>تأییدکننده</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td><input type="checkbox" name="user_ids" value="{{ user.id }}" class="user-checkbox" {% if user.id == current_user.id %}disabled{% endif %}></td>
+                <td>{{ user.code }}</td>
+                <td>{{ user.first_name }}</td>
+                <td>{{ user.last_name }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.factory.name if user.factory else '-' }}</td>
+                <td>{{ '✅' if user.is_admin else '❌' }}</td>
+                <td>{{ '✅' if user.is_approver else '❌' }}</td>
+                <td>
+                    <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-sm btn-warning">ویرایش</a>
+                    <form method="POST" action="{{ url_for('admin.user_delete', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('آیا از حذف این کاربر مطمئن هستید؟');">
+                        <button type="submit" class="btn btn-sm btn-danger" {% if user.id == current_user.id %}disabled{% endif %}>حذف</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('select-all-checkbox').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.user-checkbox:not([disabled])');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    document.getElementById('select-all-btn').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.user-checkbox:not([disabled])');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        document.getElementById('select-all-checkbox').checked = !allChecked;
+    });
+</script>
+{% endblock %}

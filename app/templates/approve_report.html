@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}تأیید گزارش{% endblock %}
+{% block content %}
+<h2>تأیید گزارش {{ report.type }}</h2>
+<div class="card mb-4">
+    <div class="card-body">
+        <p><strong>اپراتور:</strong> {{ report.user.full_name }}</p>
+        <p><strong>محصول:</strong> {{ report.product_name }}</p>
+        <p><strong>تعداد اعلامی توسط اپراتور:</strong> {{ report.quantity }}</p>
+        <hr>
+        <p class="text-muted">شما به عنوان <strong>{{ current_user.full_name }}</strong> این گزارش را تأیید می‌کنید.</p>
+    </div>
+</div>
+
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">تعداد تأییدشده (واقعی)</label>
+        <input type="number" class="form-control" name="approved_quantity" required>
+    </div>
+    <button type="submit" class="btn btn-primary">ثبت تأیید</button>
+    <a href="{{ url_for('reports.approver_dashboard') }}" class="btn btn-secondary">بازگشت</a>
+</form>
+{% endblock %}

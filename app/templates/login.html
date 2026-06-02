@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}ورود{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <h2 class="text-center mb-4">ورود به سیستم</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">نام کاربری</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">رمز عبور</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">ورود</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
