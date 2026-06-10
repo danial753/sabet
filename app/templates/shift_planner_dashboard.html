@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}داشبورد برنامه‌ریزی شیفت{% endblock %}
+{% block content %}
+<h2><i class="fas fa-calendar-check me-2"></i>گزارش‌های در انتظار تعیین نوع کار</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>اپراتور</th><th>نوع</th><th>محصول</th><th>تعداد</th><th>تاریخ</th><th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in reports %}
+        <tr>
+            <td>{{ r.user.full_name }}</td>
+            <td>{{ r.type }}</td>
+            <td>{{ r.product_name }}</td>
+            <td>{{ r.quantity }}</td>
+            <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+                <a href="{{ url_for('reports.approve_work_type', report_id=r.id) }}" class="btn btn-sm btn-primary">تعیین نوع کار</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

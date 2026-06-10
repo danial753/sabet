@@ -1,13 +1,20 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from app.models import db, ProductionReport, StoppageReport
+from app.models import db, ProductionReport, StoppageReport, Notification
 from app.data_loader import get_cnc_lists, get_manall_lists, get_stoppage_lists
-from app import cache
+from app import cache, socketio
 from datetime import datetime, timezone, timedelta
 
 reports_bp = Blueprint('reports', __name__)
-
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
+
+def can_operate():
+    return current_user.is_authenticated and current_user.is_operator
+
+def get_factory_name():
+    if current_user.factory:
+        return current_user.factory.name
+    return 'default'
 
 # ------------------------------------------------------------
 #           CNC start & stop API endpoints
@@ -15,7 +22,7 @@ IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 @reports_bp.route('/cnc/start', methods=['POST'])
 @login_required
 def cnc_start():
-    if not current_user.is_operator:
+    if not can_operate():
         return jsonify({'error': 'شما مجاز به ثبت تولید نیستید.'}), 403
     data = request.get_json()
     if not data:
@@ -42,7 +49,7 @@ def cnc_start():
 
     active = ProductionReport.query.filter_by(user_id=current_user.id, type='CNC', end_time=None).first()
     if active:
-        return jsonify({'error': 'شما یک کار CNC فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_report_id': active.id}), 400
+        return jsonify({'error': 'شما یک کار CNC فعال دارید.', 'active_report_id': active.id}), 400
 
     now = datetime.now(IRAN_TZ)
     report = ProductionReport(
@@ -67,6 +74,30 @@ def cnc_stop(report_id):
         return jsonify({'error': 'قبلاً متوقف شده'}), 400
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
+
+    # ارسال اعلان در صورت هشدار (بدون broadcast)
+    if report.duration_warning:
+        notif = Notification(
+            message=f"⚠️ هشدار زمان تولید {report.type}",
+            report_id=report.id,
+            operator_name=report.user.full_name,
+            product_name=report.product_name,
+            quantity=report.quantity,
+            actual_duration=report.duration
+        )
+        db.session.add(notif)
+        db.session.commit()
+        socketio.emit('new_warning', {
+            'id': notif.id,
+            'message': notif.message,
+            'report_id': report.id,
+            'operator_name': notif.operator_name,
+            'product_name': notif.product_name,
+            'quantity': notif.quantity,
+            'actual_duration': notif.actual_duration,
+            'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -80,7 +111,7 @@ def cnc_stop(report_id):
 @reports_bp.route('/manall/start', methods=['POST'])
 @login_required
 def manall_start():
-    if not current_user.is_operator:
+    if not can_operate():
         return jsonify({'error': 'شما مجاز به ثبت تولید نیستید.'}), 403
     data = request.get_json()
     if not data:
@@ -107,7 +138,7 @@ def manall_start():
 
     active = ProductionReport.query.filter_by(user_id=current_user.id, type='ManAll', end_time=None).first()
     if active:
-        return jsonify({'error': 'شما یک کار ManAll فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_report_id': active.id}), 400
+        return jsonify({'error': 'شما یک کار ManAll فعال دارید.', 'active_report_id': active.id}), 400
 
     now = datetime.now(IRAN_TZ)
     report = ProductionReport(
@@ -134,6 +165,30 @@ def manall_stop(report_id):
         return jsonify({'error': 'قبلاً متوقف شده'}), 400
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
+
+    # ارسال اعلان در صورت هشدار
+    if report.duration_warning:
+        notif = Notification(
+            message=f"⚠️ هشدار زمان تولید {report.type}",
+            report_id=report.id,
+            operator_name=report.user.full_name,
+            product_name=report.product_name,
+            quantity=report.quantity,
+            actual_duration=report.duration
+        )
+        db.session.add(notif)
+        db.session.commit()
+        socketio.emit('new_warning', {
+            'id': notif.id,
+            'message': notif.message,
+            'report_id': report.id,
+            'operator_name': notif.operator_name,
+            'product_name': notif.product_name,
+            'quantity': notif.quantity,
+            'actual_duration': notif.actual_duration,
+            'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -147,7 +202,7 @@ def manall_stop(report_id):
 @reports_bp.route('/stoppage/start', methods=['POST'])
 @login_required
 def stoppage_start():
-    if not current_user.is_operator:
+    if not can_operate():
         return jsonify({'error': 'شما مجاز به ثبت توقف نیستید.'}), 403
     data = request.get_json()
     if not data:
@@ -170,7 +225,7 @@ def stoppage_start():
 
     active = StoppageReport.query.filter_by(user_id=current_user.id, end_time=None).first()
     if active:
-        return jsonify({'error': 'شما یک توقف فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_id': active.id}), 400
+        return jsonify({'error': 'شما یک توقف فعال دارید.', 'active_id': active.id}), 400
 
     now = datetime.now(IRAN_TZ)
     report = StoppageReport(
@@ -196,6 +251,30 @@ def stoppage_stop(report_id):
 
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
+
+    # ارسال اعلان در صورت هشدار
+    if report.duration_warning:
+        notif = Notification(
+            message=f"⚠️ هشدار زمان توقف",
+            report_id=report.id,
+            operator_name=str(report.user_id),   # چون رابطه مستقیم با User نداریم
+            product_name=f"دستگاه {report.machine_code}",
+            quantity=0,
+            actual_duration=report.duration
+        )
+        db.session.add(notif)
+        db.session.commit()
+        socketio.emit('new_warning', {
+            'id': notif.id,
+            'message': notif.message,
+            'report_id': report.id,
+            'operator_name': notif.operator_name,
+            'product_name': notif.product_name,
+            'quantity': 0,
+            'actual_duration': notif.actual_duration,
+            'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -210,37 +289,185 @@ def stoppage_stop(report_id):
 @login_required
 @cache.cached(timeout=300)
 def cnc_options():
-    return jsonify(get_cnc_lists())
+    return jsonify(get_cnc_lists(get_factory_name()))
 
 @reports_bp.route('/api/manall/options')
 @login_required
 @cache.cached(timeout=300)
 def manall_options():
-    return jsonify(get_manall_lists())
+    return jsonify(get_manall_lists(get_factory_name()))
 
 @reports_bp.route('/api/stoppage/options')
 @login_required
 @cache.cached(timeout=300)
 def stoppage_options():
-    return jsonify(get_stoppage_lists())
+    return jsonify(get_stoppage_lists(get_factory_name()))
 
 # ------------------------------------------------------------
-#           Approver Dashboard و تأیید
+#           داشبورد و تأیید سرپرست تولید (shift_planner)
+# ------------------------------------------------------------
+@reports_bp.route('/shift-planner/dashboard')
+@login_required
+def shift_planner_dashboard():
+    if not current_user.is_shift_planner and not current_user.is_admin:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+    reports = ProductionReport.query.filter_by(work_type_approved=False).order_by(ProductionReport.date.desc()).all()
+    return render_template('shift_planner_dashboard.html', reports=reports)
+
+@reports_bp.route('/shift-planner/approve/<int:report_id>', methods=['GET', 'POST'])
+@login_required
+def approve_work_type(report_id):
+    if not current_user.is_shift_planner and not current_user.is_admin:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+
+    report = ProductionReport.query.get(report_id)
+    if not report:
+        flash('گزارش یافت نشد.', 'danger')
+        return redirect(url_for('reports.shift_planner_dashboard'))
+
+    if request.method == 'POST':
+        work_type = request.form.get('work_type')
+        if work_type not in ['normal', 'holiday', 'overtime', 'night']:
+            flash('نوع کار انتخاب‌شده معتبر نیست.', 'danger')
+            return render_template('approve_work_type.html', report=report)
+
+        report.work_type = work_type
+        report.work_type_approved = True
+        report.work_type_approved_by_id = current_user.id
+        report.work_type_approval_date = datetime.now(IRAN_TZ)
+
+        # اگر تعداد هم وارد شد، آن را نیز تأیید کند (یکپارچه)
+        approved_quantity = request.form.get('approved_quantity')
+        if approved_quantity and approved_quantity.strip():
+            try:
+                qty = int(approved_quantity)
+                report.approved_quantity = qty
+                report.is_approved = True
+                report.approved_by_id = current_user.id
+                report.approval_date = datetime.now(IRAN_TZ)
+            except ValueError:
+                flash('مقدار تعداد معتبر نیست.', 'danger')
+                return render_template('approve_work_type.html', report=report)
+
+        db.session.commit()
+        flash('نوع کار و تعداد (در صورت ورود) با موفقیت تأیید شدند.', 'success')
+        return redirect(url_for('reports.shift_planner_dashboard'))
+
+    return render_template('approve_work_type.html', report=report)
+
+# ------------------------------------------------------------
+#           Quality Inspector Dashboard (بازرس کیفیت)
+# ------------------------------------------------------------
+@reports_bp.route('/quality-inspector/dashboard')
+@login_required
+def quality_inspector_dashboard():
+    if not current_user.is_quality_inspector and not current_user.is_admin:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+    reports = ProductionReport.query.filter(
+        ProductionReport.work_type_approved == True,
+        ProductionReport.inspection_status == None
+    ).order_by(ProductionReport.date.desc()).all()
+    return render_template('quality_inspector_dashboard.html', reports=reports)
+
+@reports_bp.route('/quality-inspector/inspect/<int:report_id>', methods=['GET', 'POST'])
+@login_required
+def inspect_report(report_id):
+    if not current_user.is_quality_inspector and not current_user.is_admin:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+
+    report = ProductionReport.query.get(report_id)
+    if not report:
+        flash('گزارش یافت نشد.', 'danger')
+        return redirect(url_for('reports.quality_inspector_dashboard'))
+
+    if request.method == 'POST':
+        try:
+            healthy_qty = int(request.form.get('healthy_quantity', 0))
+            insp_qty = int(request.form.get('inspection_quantity', 0))
+        except ValueError:
+            flash('مقادیر عددی نامعتبر', 'danger')
+            return render_template('inspect_report.html', report=report)
+
+        report.healthy_quantity = healthy_qty
+        report.inspection_quantity = insp_qty
+        report.inspection_status = 'inspected'
+        report.inspector_id = current_user.id
+        report.inspection_date = datetime.now(IRAN_TZ)
+        db.session.commit()
+        flash('وضعیت قطعات با موفقیت ثبت شد.', 'success')
+        return redirect(url_for('reports.quality_inspector_dashboard'))
+
+    return render_template('inspect_report.html', report=report)
+
+# ------------------------------------------------------------
+#           Warehouse Dashboard (انبار)
+# ------------------------------------------------------------
+@reports_bp.route('/warehouse/dashboard')
+@login_required
+def warehouse_dashboard():
+    if not current_user.is_warehouse and not current_user.is_admin:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+    reports = ProductionReport.query.filter(
+        ProductionReport.work_type_approved == True,
+        ProductionReport.inspection_status == 'inspected',
+        ProductionReport.warehouse_quantity == None
+    ).order_by(ProductionReport.date.desc()).all()
+    return render_template('warehouse_dashboard.html', reports=reports)
+
+@reports_bp.route('/warehouse/confirm/<int:report_id>', methods=['GET', 'POST'])
+@login_required
+def warehouse_confirm(report_id):
+    if not current_user.is_warehouse and not current_user.is_admin:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+
+    report = ProductionReport.query.get(report_id)
+    if not report:
+        flash('گزارش یافت نشد.', 'danger')
+        return redirect(url_for('reports.warehouse_dashboard'))
+
+    if request.method == 'POST':
+        try:
+            wh_qty = int(request.form.get('warehouse_quantity', 0))
+        except ValueError:
+            flash('مقدار تعداد معتبر نیست.', 'danger')
+            return render_template('warehouse_confirm.html', report=report)
+
+        report.warehouse_quantity = wh_qty
+        report.warehouse_id = current_user.id
+        report.warehouse_date = datetime.now(IRAN_TZ)
+        db.session.commit()
+        flash('تأیید انبار با موفقیت ثبت شد.', 'success')
+        return redirect(url_for('reports.warehouse_dashboard'))
+
+    return render_template('warehouse_confirm.html', report=report)
+
+# ------------------------------------------------------------
+#           Approver Dashboard (تأییدکننده کیفیت)
 # ------------------------------------------------------------
 @reports_bp.route('/approver/dashboard')
 @login_required
 def approver_dashboard():
-    if not (current_user.is_approver or current_user.is_admin):
+    if not current_user.is_approver and not current_user.is_admin:
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
-    # نمایش گزارش‌هایی که هنوز تأیید نشده‌اند
-    reports = ProductionReport.query.filter_by(is_approved=False).order_by(ProductionReport.date.desc()).all()
+    reports = ProductionReport.query.filter(
+        ProductionReport.work_type_approved == True,
+        ProductionReport.inspection_status == 'inspected',
+        ProductionReport.warehouse_quantity != None,
+        ProductionReport.is_approved == False
+    ).order_by(ProductionReport.date.desc()).all()
     return render_template('approve_dashboard.html', reports=reports)
 
 @reports_bp.route('/approver/approve/<int:report_id>', methods=['GET', 'POST'])
 @login_required
 def approve_report(report_id):
-    if not (current_user.is_approver or current_user.is_admin):
+    if not current_user.is_approver and not current_user.is_admin:
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
 
@@ -274,8 +501,14 @@ def approve_report(report_id):
 @reports_bp.route('/production/<string:prod_type>')
 @login_required
 def production(prod_type):
-    if not current_user.is_operator:
+    if not can_operate():
         flash('شما مجاز به ثبت تولید نیستید.', 'warning')
+        if current_user.is_shift_planner:
+            return redirect(url_for('reports.shift_planner_dashboard'))
+        if current_user.is_quality_inspector:
+            return redirect(url_for('reports.quality_inspector_dashboard'))
+        if current_user.is_warehouse:
+            return redirect(url_for('reports.warehouse_dashboard'))
         if current_user.is_approver:
             return redirect(url_for('reports.approver_dashboard'))
         return redirect(url_for('admin.view_user_reports'))
@@ -290,8 +523,14 @@ def production(prod_type):
 @reports_bp.route('/stoppage')
 @login_required
 def stoppage():
-    if not current_user.is_operator:
+    if not can_operate():
         flash('شما مجاز به ثبت توقف نیستید.', 'warning')
+        if current_user.is_shift_planner:
+            return redirect(url_for('reports.shift_planner_dashboard'))
+        if current_user.is_quality_inspector:
+            return redirect(url_for('reports.quality_inspector_dashboard'))
+        if current_user.is_warehouse:
+            return redirect(url_for('reports.warehouse_dashboard'))
         if current_user.is_approver:
             return redirect(url_for('reports.approver_dashboard'))
         return redirect(url_for('admin.view_user_reports'))
@@ -309,7 +548,12 @@ def stoppage():
 def dashboard():
     if current_user.is_admin:
         return redirect(url_for('admin.view_user_reports'))
+    if current_user.is_shift_planner:
+        return redirect(url_for('reports.shift_planner_dashboard'))
+    if current_user.is_quality_inspector:
+        return redirect(url_for('reports.quality_inspector_dashboard'))
+    if current_user.is_warehouse:
+        return redirect(url_for('reports.warehouse_dashboard'))
     if current_user.is_approver:
         return redirect(url_for('reports.approver_dashboard'))
-    # اپراتور ساده
     return render_template('dashboard.html')

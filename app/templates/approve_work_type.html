@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}تعیین نوع کار و تأیید تعداد{% endblock %}
+{% block content %}
+<h2>تأیید نهایی (سرپرست تولید)</h2>
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>اپراتور:</strong> {{ report.user.full_name }}</p>
+        <p><strong>محصول:</strong> {{ report.product_name }}</p>
+        <p><strong>تعداد اعلامی توسط اپراتور:</strong> {{ report.quantity }}</p>
+        <p><strong>شیفت:</strong> {{ report.shift_fa }}</p>
+    </div>
+</div>
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">نوع کار</label>
+        <select class="form-select" name="work_type" required>
+            <option value="">انتخاب کنید</option>
+            <option value="normal">تولید عادی</option>
+            <option value="holiday">تعطیل‌کاری</option>
+            <option value="overtime">اضافه‌کاری</option>
+            <option value="night">شب‌کاری</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">تعداد واقعی (اختیاری – در صورت تأیید نهایی)</label>
+        <input type="number" class="form-control" name="approved_quantity" placeholder="تعداد واقعی قطعات">
+        <small class="text-muted">در صورتی که تعداد را نیز تأیید می‌کنید، مقدار واقعی را وارد نمایید.</small>
+    </div>
+    <button type="submit" class="btn btn-success">ثبت تأیید نهایی</button>
+    <a href="{{ url_for('reports.shift_planner_dashboard') }}" class="btn btn-secondary">بازگشت</a>
+</form>
+{% endblock %}

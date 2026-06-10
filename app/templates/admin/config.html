@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}تنظیمات{% endblock %}
+{% block content %}
+<h2><i class="fas fa-sliders-h me-2"></i>پیکربندی سیستم</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">حد مجاز هشدار زمانی (%)</label>
+        <input type="number" step="0.1" class="form-control" name="warning_threshold" value="{{ current_threshold }}" min="0" max="100">
+        <small class="text-muted">اگر مدت واقعی بیش از این درصد از زمان مورد انتظار بیشتر شود، هشدار نمایش داده می‌شود.</small>
+    </div>
+    <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>ذخیره تنظیمات</button>
+</form>
+
+<hr>
+
+<div class="mb-3">
+    <h5><i class="fas fa-sync-alt me-1"></i>به‌روزرسانی لیست‌ها</h5>
+    <p class="text-muted">در صورتی که فایل‌های اکسل را تغییر داده‌اید، با این دکمه لیست‌های JSON بازسازی می‌شوند.</p>
+    <form method="POST" action="{{ url_for('admin.update_json_data') }}">
+        <button type="submit" class="btn btn-warning">
+            <i class="fas fa-sync-alt me-1"></i> به‌روزرسانی لیست‌ها از اکسل
+        </button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}داشبورد انبار{% endblock %}
+{% block content %}
+<h2><i class="fas fa-warehouse me-2"></i>گزارش‌های در انتظار تأیید انبار</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>اپراتور</th><th>نوع</th><th>محصول</th><th>تعداد اعلامی</th><th>تاریخ</th><th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in reports %}
+        <tr>
+            <td>{{ r.user.full_name }}</td>
+            <td>{{ r.type }}</td>
+            <td>{{ r.product_name }}</td>
+            <td>{{ r.quantity }}</td>
+            <td>{{ r.date | jalali_date }}</td>
+            <td>
+                <a href="{{ url_for('reports.warehouse_confirm', report_id=r.id) }}" class="btn btn-sm btn-info">تأیید انبار</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

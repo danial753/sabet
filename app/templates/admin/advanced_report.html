@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}گزارش پیشرفته{% endblock %}
+{% block content %}
+<h2>گزارش ترکیبی تولید</h2>
+<form method="POST" class="row g-2 mb-4">
+    <div class="col-md-2">
+        <select name="machine" class="form-select">
+            <option value="">همه ماشین‌ها</option>
+            {% for m in machines %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="product" class="form-select">
+            <option value="">همه محصولات</option>
+            {% for p in products %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="shift" class="form-select">
+            <option value="">همه شیفت‌ها</option>
+            <option value="A">صبح</option>
+            <option value="B">ظهر</option>
+            <option value="C">شب</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="work_type" class="form-select">
+            <option value="">همه نوع کارها</option>
+            <option value="normal">تولید عادی</option>
+            <option value="holiday">تعطیل‌کاری</option>
+            <option value="overtime">اضافه‌کاری</option>
+            <option value="night">شب‌کاری</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <input type="text" class="form-control" name="start_date" placeholder="از تاریخ (شمسی)">
+    </div>
+    <div class="col-md-2">
+        <input type="text" class="form-control" name="end_date" placeholder="تا تاریخ (شمسی)">
+    </div>
+    <div class="col-md-2 mt-2">
+        <button type="submit" class="btn btn-primary w-100">فیلتر</button>
+    </div>
+</form>
+
+{% if reports %}
+    {% include "_production_table.html" with context %}
+{% else %}
+    <p>گزارشی یافت نشد.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}ویرایش گزارش تولید{% endblock %}
+{% block content %}
+<h2>ویرایش گزارش تولید ({{ report.type }})</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>شناسه گزارش:</strong> {{ report.id }}</p>
+        <p><strong>تاریخ ثبت:</strong> {{ report.date | jalali_date }}</p>
+    </div>
+</div>
+
+<form method="POST">
+    <!-- اپراتور -->
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">اپراتور</label>
+            <select class="form-select" name="user_id" required>
+                <option value="">انتخاب کنید</option>
+                {% for u in operators %}
+                <option value="{{ u.id }}" {% if u.id == report.user_id %}selected{% endif %}>{{ u.full_name }} ({{ u.code }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">نوع کار</label>
+            <select class="form-select" name="work_type" required>
+                <option value="">انتخاب کنید</option>
+                <option value="normal" {% if report.work_type == 'normal' %}selected{% endif %}>تولید عادی</option>
+                <option value="holiday" {% if report.work_type == 'holiday' %}selected{% endif %}>تعطیل‌کاری</option>
+                <option value="overtime" {% if report.work_type == 'overtime' %}selected{% endif %}>اضافه‌کاری</option>
+                <option value="night" {% if report.work_type == 'night' %}selected{% endif %}>شب‌کاری</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- شیفت -->
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">شیفت</label>
+            <select class="form-select" name="shift" required>
+                <option value="">انتخاب کنید</option>
+                <option value="A" {% if report.shift == 'A' %}selected{% endif %}>صبح</option>
+                <option value="B" {% if report.shift == 'B' %}selected{% endif %}>ظهر</option>
+                <option value="C" {% if report.shift == 'C' %}selected{% endif %}>شب</option>
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">محصول (نام قطعه)</label>
+            <input type="text" class="form-control" name="product_name" value="{{ report.product_name }}" required>
+        </div>
+    </div>
+
+    <!-- سایز (فقط برای CNC) -->
+    {% if report.type == 'CNC' %}
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">سایز قطعه</label>
+            <input type="text" class="form-control" name="part_size" value="{{ report.part_size }}">
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- کد دستگاه و مرحله کاری -->
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">کد دستگاه</label>
+            <input type="text" class="form-control" name="machine_code" value="{{ report.machine_code }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">کد مرحله کاری</label>
+            <input type="text" class="form-control" name="operation_stage_code" value="{{ report.operation_stage_code }}" required>
+        </div>
+    </div>
+
+    <!-- عنوان کار (فقط برای ManAll) -->
+    {% if report.type == 'ManAll' %}
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">عنوان کار منوال</label>
+            <input type="text" class="form-control" name="manual_title" value="{{ report.manual_title or '' }}">
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- تعداد -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">تعداد اعلامی</label>
+            <input type="number" class="form-control" name="quantity" value="{{ report.quantity }}" required>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">تعداد تأییدشده</label>
+            <input type="number" class="form-control" name="approved_quantity" value="{{ report.approved_quantity or '' }}">
+        </div>
+    </div>
+
+    <!-- زمان‌ها -->
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">زمان شروع</label>
+            <input type="datetime-local" class="form-control" name="start_time"
+                   value="{{ report.start_time.strftime('%Y-%m-%dT%H:%M') if report.start_time else '' }}">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">زمان پایان</label>
+            <input type="datetime-local" class="form-control" name="end_time"
+                   value="{{ report.end_time.strftime('%Y-%m-%dT%H:%M') if report.end_time else '' }}">
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+    <a href="{{ url_for('admin.view_user_reports') }}" class="btn btn-secondary">بازگشت</a>
+</form>
+{% endblock %}

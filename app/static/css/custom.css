@@ -1,0 +1,224 @@
+/* ========================================
+   تم حرفه‌ای – کارخانه آذین (RTL, Dark/Light)
+   ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
+
+:root {
+  /* رنگ‌های اصلی */
+  --primary: #1a3a5c;        /* سرمه‌ای */
+  --primary-light: #2a5078;
+  --secondary: #f4a261;      /* کهربایی */
+  --accent: #e76f51;
+  --danger: #dc3545;
+  --success: #198754;
+  --warning: #ffc107;
+  --info: #0dcaf0;
+
+  /* سطوح */
+  --bg-body: #f4f6f9;
+  --bg-card: #ffffff;
+  --bg-sidebar: #1a3a5c;
+  --bg-topbar: #ffffff;
+  --bg-input: #ffffff;
+  --bg-table-stripe: #f8fafc;
+
+  /* متن */
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-sidebar: #c8d6e5;
+  --text-sidebar-active: #ffffff;
+
+  /* سایه‌ها */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-dropdown: 0 8px 24px rgba(0,0,0,0.12);
+
+  /* شعاع گوشه */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* فونت */
+  --font-family: 'Vazirmatn', sans-serif;
+  --font-size-sm: 0.8rem;
+  --font-size-md: 0.875rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+}
+
+/* حالت تاریک */
+body.dark {
+  --bg-body: #1e2a38;
+  --bg-card: #243447;
+  --bg-sidebar: #141e2b;
+  --bg-topbar: #243447;
+  --bg-input: #2d3e50;
+  --bg-table-stripe: #1a2a3a;
+
+  --text-primary: #e9ecef;
+  --text-secondary: #adb5bd;
+  --text-sidebar: #a0b3c5;
+  --text-sidebar-active: #ffffff;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+* { font-family: var(--font-family); }
+
+body {
+  background: var(--bg-body);
+  color: var(--text-primary);
+  transition: background 0.3s, color 0.3s;
+  font-size: var(--font-size-md);
+}
+
+/* ---- نوار بالای ثابت (Topbar) ---- */
+.navbar {
+  background: var(--bg-topbar) !important;
+  box-shadow: var(--shadow-sm);
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.navbar-brand {
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  color: var(--primary) !important;
+}
+.navbar-nav .nav-link {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  font-size: var(--font-size-md);
+  padding: 0.4rem 0.8rem;
+  margin: 0 0.1rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+.navbar-nav .nav-link:hover {
+  background: rgba(0,0,0,0.05);
+}
+.navbar-nav .nav-link i {
+  margin-left: 0.3rem;
+}
+
+/* دکمه تغییر تم */
+.theme-toggle {
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s, background 0.2s;
+}
+.theme-toggle:hover {
+  color: var(--primary);
+  background: rgba(0,0,0,0.05);
+}
+
+/* ---- کارت‌ها ---- */
+.card {
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  background: var(--bg-card);
+  margin-bottom: 1rem;
+}
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ---- دکمه‌ها ---- */
+.btn {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: var(--font-size-md);
+  padding: 0.4rem 0.9rem;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--primary); border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-success { background: var(--success); border-color: var(--success); }
+.btn-danger { background: var(--danger); border-color: var(--danger); }
+.btn-warning { background: var(--warning); border-color: var(--warning); color: #000; }
+
+/* ---- جداول ---- */
+.table {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.table thead th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  padding: 0.6rem 0.5rem;
+  border: none;
+}
+.table tbody td {
+  font-size: var(--font-size-sm);
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background: var(--bg-table-stripe);
+}
+
+/* ---- فرم‌ها ---- */
+.form-control, .form-select {
+  border-radius: var(--radius-sm);
+  border: 1px solid #dee2e6;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  padding: 0.4rem 0.7rem;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 0.2rem rgba(26,58,92,0.15);
+}
+.form-label {
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+
+/* ---- هشدارها ---- */
+.alert {
+  border-radius: var(--radius-sm);
+  border: none;
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-sm);
+}
+
+/* ---- صفحات (login) ---- */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-body);
+}
+.login-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* ---- واکنش‌گرایی ---- */
+@media (max-width: 768px) {
+  .navbar-brand { font-size: var(--font-size-md); }
+  .btn { font-size: var(--font-size-sm); padding: 0.3rem 0.6rem; }
+  h2 { font-size: var(--font-size-xl); }
+}

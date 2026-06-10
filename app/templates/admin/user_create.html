@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 {% block title %}ایجاد کاربر جدید{% endblock %}
-
 {% block content %}
-<h2>ثبت کاربر جدید</h2>
-
+<h2><i class="fas fa-user-plus me-2"></i>ثبت کاربر جدید</h2>
 <form method="POST">
     <div class="row">
         <div class="col-md-6 mb-3">
@@ -31,13 +29,34 @@
     </div>
     <div class="row">
         <div class="col-md-4 mb-3">
+            <label class="form-label">کارخانه</label>
+            <select class="form-select" name="factory_id" required>
+                <option value="">انتخاب کنید</option>
+                {% for factory in factories %}
+                <option value="{{ factory.id }}">{{ factory.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
             <div class="form-check mt-4">
                 <input class="form-check-input" type="checkbox" id="is_approver" name="is_approver">
-                <label class="form-check-label" for="is_approver">تأییدکننده</label>
+                <label class="form-check-label" for="is_approver">تأییدکننده کیفیت</label>
+            </div>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="is_shift_planner" name="is_shift_planner">
+                <label class="form-check-label" for="is_shift_planner">سرپرست تولید</label>
+            </div>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="is_quality_inspector" name="is_quality_inspector">
+                <label class="form-check-label" for="is_quality_inspector">بازرس کیفیت</label>
+            </div>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="is_warehouse" name="is_warehouse">
+                <label class="form-check-label" for="is_warehouse">انبار</label>
             </div>
         </div>
     </div>
-    <button type="submit" class="btn btn-success">ایجاد کاربر</button>
-    <a href="{{ url_for('admin.user_list') }}" class="btn btn-secondary">بازگشت</a>
+    <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>ایجاد کاربر</button>
+    <a href="{{ url_for('admin.user_list') }}" class="btn btn-secondary"><i class="fas fa-arrow-right me-1"></i>بازگشت</a>
 </form>
 {% endblock %}

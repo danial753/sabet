@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}ساعات کاری اپراتورها{% endblock %}
+{% block content %}
+<h2><i class="fas fa-clock me-2"></i>ساعات کاری اپراتورها</h2>
+
+<form method="GET" class="row g-2 mb-4">
+    <div class="col-md-3">
+        <select class="form-select" name="operator_id">
+            <option value="">همه اپراتورها</option>
+            {% for op in operators %}
+            <option value="{{ op.id }}" {% if operator_id == op.id %}selected{% endif %}>{{ op.full_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <input type="text" class="form-control" name="start_date" placeholder="از تاریخ (شمسی)" value="{{ start_date or '' }}">
+    </div>
+    <div class="col-md-2">
+        <input type="text" class="form-control" name="end_date" placeholder="تا تاریخ (شمسی)" value="{{ end_date or '' }}">
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">فیلتر</button>
+    </div>
+    <div class="col-md-3 text-end">
+        <span class="fs-5 fw-bold">مجموع ساعات کاری: {{ total_hours }} ساعت</span>
+    </div>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>اپراتور</th>
+            <th>تاریخ ورود</th>
+            <th>زمان ورود</th>
+            <th>زمان خروج</th>
+            <th>مدت (دقیقه)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in sessions %}
+        <tr>
+            <td>{{ s.user.full_name }}</td>
+            <td>{{ s.login_time.strftime('%Y-%m-%d') }}</td>
+            <td>{{ s.login_time.strftime('%H:%M:%S') }}</td>
+            <td>{{ s.logout_time.strftime('%H:%M:%S') if s.logout_time else '---' }}</td>
+            <td>{{ s.duration_minutes if s.duration_minutes else '---' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

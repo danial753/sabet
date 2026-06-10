@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}تأیید انبار{% endblock %}
+{% block content %}
+<h2>تأیید نهایی انبار</h2>
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>اپراتور:</strong> {{ report.user.full_name }}</p>
+        <p><strong>محصول:</strong> {{ report.product_name }}</p>
+        <p><strong>تعداد اعلامی:</strong> {{ report.quantity }}</p>
+        <p><strong>تعداد تأییدشده (سرپرست):</strong> {{ report.approved_quantity or '-' }}</p>
+        <p><strong>سالم (بازرس):</strong> {{ report.healthy_quantity or '-' }}</p>
+        <p><strong>در حال بررسی (بازرس):</strong> {{ report.inspection_quantity or '-' }}</p>
+    </div>
+</div>
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">تعداد نهایی (انبار)</label>
+        <input type="number" class="form-control" name="warehouse_quantity" required>
+    </div>
+    <button type="submit" class="btn btn-success">ثبت تأیید انبار</button>
+    <a href="{{ url_for('reports.warehouse_dashboard') }}" class="btn btn-secondary">بازگشت</a>
+</form>
+{% endblock %}

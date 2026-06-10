@@ -3,8 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 
 db = SQLAlchemy()
-
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
+
+class Factory(db.Model):
+    __tablename__ = 'factory'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -15,6 +19,11 @@ class User(UserMixin, db.Model):
     code = db.Column(db.String(20), unique=True, nullable=False, default='')
     is_admin = db.Column(db.Boolean, default=False)
     is_approver = db.Column(db.Boolean, default=False)
+    is_shift_planner = db.Column(db.Boolean, default=False)
+    is_quality_inspector = db.Column(db.Boolean, default=False)
+    is_warehouse = db.Column(db.Boolean, default=False)
+    factory_id = db.Column(db.Integer, db.ForeignKey('factory.id'), nullable=True)
+    factory = db.relationship('Factory', backref='users', lazy=True)
 
     @property
     def full_name(self):
@@ -22,7 +31,9 @@ class User(UserMixin, db.Model):
 
     @property
     def is_operator(self):
-        return not self.is_admin and not self.is_approver
+        return (not self.is_admin and not self.is_approver and
+                not self.is_shift_planner and not self.is_quality_inspector and
+                not self.is_warehouse)
 
 class ProductionReport(db.Model):
     __tablename__ = 'production_report'
@@ -46,18 +57,43 @@ class ProductionReport(db.Model):
 
     expected_duration_seconds = db.Column(db.Integer, nullable=True)
 
-    # فیلدهای تأیید
+    # فیلدهای نوع کار (سرپرست تولید)
+    work_type = db.Column(db.String(20), nullable=True)
+    work_type_approved = db.Column(db.Boolean, default=False)
+    work_type_approved_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    work_type_approval_date = db.Column(db.DateTime, nullable=True)
+    work_type_approved_by = db.relationship('User', foreign_keys=[work_type_approved_by_id], lazy=True)
+
+    # فیلدهای تأیید تعداد (تأییدکننده کیفیت)
     is_approved = db.Column(db.Boolean, default=False)
     approved_quantity = db.Column(db.Integer, nullable=True)
     approved_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     approval_date = db.Column(db.DateTime, nullable=True)
-
     approved_by = db.relationship('User', foreign_keys=[approved_by_id], lazy=True)
+
+    # فیلدهای بازرسی کیفیت
+    healthy_quantity = db.Column(db.Integer, nullable=True)
+    inspection_quantity = db.Column(db.Integer, nullable=True)
+    inspection_status = db.Column(db.String(20), nullable=True)
+    inspector_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    inspection_date = db.Column(db.DateTime, nullable=True)
+    inspector = db.relationship('User', foreign_keys=[inspector_id], lazy=True)
+
+    # فیلدهای انبار
+    warehouse_quantity = db.Column(db.Integer, nullable=True)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    warehouse_date = db.Column(db.DateTime, nullable=True)
+    warehouse_user = db.relationship('User', foreign_keys=[warehouse_id], lazy=True)
 
     @property
     def shift_fa(self):
         mapping = {'A': 'صبح', 'B': 'ظهر', 'C': 'شب'}
         return mapping.get(self.shift, self.shift or '-')
+
+    @property
+    def work_type_fa(self):
+        mapping = {'normal': 'تولید عادی', 'holiday': 'تعطیل‌کاری', 'overtime': 'اضافه‌کاری', 'night': 'شب‌کاری'}
+        return mapping.get(self.work_type, 'تعیین نشده')
 
     @property
     def duration_seconds(self):
@@ -84,14 +120,15 @@ class ProductionReport(db.Model):
 
     @property
     def duration_warning(self):
-        if self.expected_duration_seconds and self.duration_seconds:
-            expected = self.expected_duration_seconds
-            actual = self.duration_seconds
-            if expected == 0:
-                return False
-            if actual > expected * 1.05:
-                return True
-        return False
+        if not self.expected_duration_seconds or not self.duration_seconds:
+            return False
+        setting = ConfigSetting.query.filter_by(key='warning_threshold').first()
+        threshold = float(setting.value) if setting else 5.0
+        expected = self.expected_duration_seconds
+        actual = self.duration_seconds
+        if expected == 0:
+            return False
+        return actual > expected * (1 + threshold / 100.0)
 
     @property
     def quantity_diff(self):
@@ -109,7 +146,6 @@ class StoppageReport(db.Model):
     reason = db.Column(db.Text, nullable=True)
     start_time = db.Column(db.DateTime, default=lambda: datetime.now(IRAN_TZ))
     end_time = db.Column(db.DateTime)
-
     expected_duration_seconds = db.Column(db.Integer, nullable=True)
 
     @property
@@ -137,14 +173,15 @@ class StoppageReport(db.Model):
 
     @property
     def duration_warning(self):
-        if self.expected_duration_seconds and self.duration_seconds:
-            expected = self.expected_duration_seconds
-            actual = self.duration_seconds
-            if expected == 0:
-                return False
-            if actual > expected * 1.05:
-                return True
-        return False
+        if not self.expected_duration_seconds or not self.duration_seconds:
+            return False
+        setting = ConfigSetting.query.filter_by(key='warning_threshold').first()
+        threshold = float(setting.value) if setting else 5.0
+        expected = self.expected_duration_seconds
+        actual = self.duration_seconds
+        if expected == 0:
+            return False
+        return actual > expected * (1 + threshold / 100.0)
 
     @property
     def time_diff_seconds(self):
@@ -167,3 +204,45 @@ class StoppageReport(db.Model):
     def time_diff_is_positive(self):
         diff = self.time_diff_seconds
         return diff is not None and diff > 0
+
+class SystemLog(db.Model):
+    __tablename__ = 'system_log'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user = db.relationship('User', backref='logs', lazy=True)
+    action = db.Column(db.String(200), nullable=False)
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(IRAN_TZ))
+
+class ConfigSetting(db.Model):
+    __tablename__ = 'config_setting'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.String(200), nullable=False)
+
+class WorkSession(db.Model):
+    __tablename__ = 'work_session'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True, nullable=False)
+    user = db.relationship('User', backref='work_sessions', lazy=True)
+    login_time = db.Column(db.DateTime, default=lambda: datetime.now(IRAN_TZ))
+    logout_time = db.Column(db.DateTime, nullable=True)
+
+    @property
+    def duration_minutes(self):
+        if self.logout_time:
+            return round((self.logout_time - self.login_time).total_seconds() / 60, 1)
+        return None
+
+# ----- مدل جدید برای اعلان‌ها -----
+class Notification(db.Model):
+    __tablename__ = 'notification'
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.String(300), nullable=False)
+    report_id = db.Column(db.Integer, nullable=True)
+    operator_name = db.Column(db.String(100), nullable=True)
+    product_name = db.Column(db.String(100), nullable=True)
+    quantity = db.Column(db.Integer, nullable=True)
+    actual_duration = db.Column(db.String(20), nullable=True)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(IRAN_TZ))

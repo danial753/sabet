@@ -16,7 +16,11 @@
                 <th>عنوان کار</th>
                 {% endif %}
                 <th>تعداد</th>
-                <th>تأیید</th>
+                <th>نوع کار</th>
+                <th>تأیید نوع کار</th>
+                <th>بازرس</th>
+                <th>انبار</th>
+                <th>تأیید تعداد</th>
                 <th>شروع</th>
                 <th>پایان</th>
                 <th>مدت واقعی</th>
@@ -26,7 +30,7 @@
         <tbody>
             {% for r in reports %}
             <tr>
-                <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ r.date | jalali_date }}</td>
                 <td>{{ r.shift_fa }}</td>
                 <td>{{ r.product_name }}</td>
                 {% if prod_type == 'CNC' %}
@@ -38,15 +42,33 @@
                 <td>{{ r.manual_title or '-' }}</td>
                 {% endif %}
                 <td>{{ r.quantity }}</td>
+                <td>{{ r.work_type_fa }}</td>
+                <td>
+                    {% if r.work_type_approved %}
+                        {{ r.work_type_approved_by.full_name if r.work_type_approved_by else '---' }}
+                    {% else %}
+                        ⏳
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.inspection_status == 'inspected' %}
+                        {{ r.inspector.full_name if r.inspector else '---' }} (سالم: {{ r.healthy_quantity }}, بررسی: {{ r.inspection_quantity }})
+                    {% else %}
+                        ⏳
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.warehouse_quantity is not none %}
+                        {{ r.warehouse_user.full_name if r.warehouse_user else '---' }} ({{ r.warehouse_quantity }})
+                    {% else %}
+                        ⏳
+                    {% endif %}
+                </td>
                 <td>
                     {% if r.is_approved %}
-                        ✅ تأیید توسط <strong>{{ r.approved_by.full_name }}</strong>
-                        <br>تعداد تأییدشده: {{ r.approved_quantity }}
-                        {% if r.quantity_diff != 0 %}
-                            <br><span class="text-danger">مغایرت: {{ r.quantity_diff }}</span>
-                        {% endif %}
+                        {{ r.approved_by.full_name if r.approved_by else '---' }} ({{ r.approved_quantity }})
                     {% else %}
-                        ⏳ در انتظار تأیید
+                        ⏳
                     {% endif %}
                 </td>
                 <td>{{ r.start_time.strftime('%H:%M:%S') if r.start_time else '-' }}</td>

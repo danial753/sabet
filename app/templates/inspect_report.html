@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}بازرسی گزارش{% endblock %}
+{% block content %}
+<h2>بازرسی کیفیت گزارش</h2>
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>اپراتور:</strong> {{ report.user.full_name }}</p>
+        <p><strong>محصول:</strong> {{ report.product_name }}</p>
+        <p><strong>تعداد اعلامی:</strong> {{ report.quantity }}</p>
+    </div>
+</div>
+<form method="POST">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">تعداد سالم</label>
+            <input type="number" class="form-control" name="healthy_quantity" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">تعداد در حال بررسی</label>
+            <input type="number" class="form-control" name="inspection_quantity" required>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">ثبت بازرسی</button>
+    <a href="{{ url_for('reports.quality_inspector_dashboard') }}" class="btn btn-secondary">بازگشت</a>
+</form>
+{% endblock %}

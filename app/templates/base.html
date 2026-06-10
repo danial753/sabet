@@ -3,69 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}سیستم گزارش کارخانه{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <title>{% block title %}پنل مدیریت آذین{% endblock %}</title>
+    <!-- Bootstrap 5.3 RTL محلی -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.rtl.min.css') }}">
+    <!-- Font Awesome محلی -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='all.min.css') }}">
+    <!-- تم سفارشی -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     {% block head_extra %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('reports.dashboard') }}">گزارشات کارخانه</a>
+    <!-- نوار بالای حرفه‌ای -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('reports.dashboard') }}">
+                <i class="fas fa-industry me-2"></i>آذین
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_operator %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('reports.dashboard') }}">داشبورد</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('reports.production') }}">تولید</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('reports.stoppage') }}">توقف</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.dashboard') }}"><i class="fas fa-tachometer-alt"></i>داشبورد</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.production') }}"><i class="fas fa-cogs"></i>تولید</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.stoppage') }}"><i class="fas fa-pause-circle"></i>توقف</a></li>
                         {% endif %}
-                        {% if current_user.is_approver or current_user.is_admin %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('reports.approver_dashboard') }}">تأیید گزارش</a>
-                        </li>
+
+                        {% if current_user.is_shift_planner or current_user.is_admin %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.shift_planner_dashboard') }}"><i class="fas fa-calendar-check"></i>سرپرست تولید</a></li>
                         {% endif %}
+
+                        {% if current_user.is_quality_inspector or current_user.is_admin %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.quality_inspector_dashboard') }}"><i class="fas fa-microscope"></i>بازرس کیفیت</a></li>
+                        {% endif %}
+
+                        {% if current_user.is_warehouse or current_user.is_admin %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.warehouse_dashboard') }}"><i class="fas fa-warehouse"></i>انبار</a></li>
+                        {% endif %}
+
+                        {% if current_user.is_approver %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.approver_dashboard') }}"><i class="fas fa-check-double"></i>تأیید گزارش</a></li>
+                        {% endif %}
+
                         {% if current_user.is_admin %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                ادمین
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('admin.user_list') }}">مدیریت کاربران</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin.view_user_reports') }}">مشاهده گزارش کاربر</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin_report.general_report_form') }}">گزارش جامع</a></li>
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="fas fa-user-shield"></i>ادمین</a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('admin.user_list') }}"><i class="fas fa-users-cog me-1"></i>مدیریت کاربران</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.view_user_reports') }}"><i class="fas fa-search me-1"></i>مشاهده گزارش کاربر</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_report.general_report_form') }}"><i class="fas fa-file-excel me-1"></i>گزارش جامع</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.advanced_report') }}"><i class="fas fa-filter me-1"></i>گزارش پیشرفته</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('analytics.dashboard') }}"><i class="fas fa-chart-pie me-1"></i>داشبورد تحلیلی</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.operator_work_time') }}"><i class="fas fa-clock me-1"></i>ساعات کاری اپراتورها</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.warning_reports') }}"><i class="fas fa-exclamation-triangle me-1"></i>گزارش هشدارها</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.system_logs') }}"><i class="fas fa-history me-1"></i>لاگ سیستم</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.config') }}"><i class="fas fa-sliders-h me-1"></i>تنظیمات</a></li>
                             </ul>
                         </li>
                         {% endif %}
-                        <li class="nav-item">
-                            <span class="nav-link text-light">{{ current_user.full_name }}</span>
+
+                        <!-- زنگوله اعلان‌ها (فقط برای سرپرست تولید) -->
+                        {% if current_user.is_shift_planner %}
+                        <li class="nav-item dropdown" id="notification-container">
+                            <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-bell"></i>
+                                <span id="notification-badge" class="badge bg-danger" style="display:none">0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" id="notification-list" style="width: 380px; max-height: 400px; overflow-y: auto;">
+                                <li class="dropdown-item text-muted">در حال بارگذاری...</li>
+                            </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.logout') }}">خروج</a>
+                        {% endif %}
+
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('profile.view') }}"><i class="fas fa-id-card"></i>پروفایل</a></li>
+                        <li class="nav-item"><span class="nav-link text-secondary">{{ current_user.full_name }}</span></li>
+                        <li class="nav-item"><a class="nav-link text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i>خروج</a></li>
+
+                        <!-- دکمه تغییر تم -->
+                        <li class="nav-item ms-2">
+                            <button class="theme-toggle" id="themeToggle" title="تغییر تم">
+                                <i class="fas fa-moon"></i>
+                            </button>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">ورود</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i>ورود</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
-    <div class="container">
+
+    <!-- محتوای اصلی -->
+    <div class="container-fluid mt-3">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
               <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
+                <i class="fas fa-info-circle me-1"></i>{{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
             {% endfor %}
@@ -73,7 +112,145 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- فوتر ساده -->
+    <footer class="text-center text-muted py-2 mt-4" style="font-size: 0.75rem;">
+        <span>تمامی حقوق محفوظ است © ۱۴۰۵ | شرکت آذین</span>
+    </footer>
+
+    <!-- مودال نمایش جزئیات هشدار -->
+    <div class="modal fade" id="warningModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>هشدار زمان تولید</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="warningModalBody">
+                    <!-- محتوا با JS پر می‌شود -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                    <a href="#" class="btn btn-primary" id="warningEditBtn"><i class="fas fa-edit me-1"></i>ویرایش گزارش</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
+    {% if request.endpoint == 'analytics.dashboard' %}
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
+    {% endif %}
+
+    <!-- اسکریپت تغییر تم و اعلان‌ها -->
+    <script>
+        // تغییر تم
+        const themeToggle = document.getElementById('themeToggle');
+        const icon = themeToggle.querySelector('i');
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+        themeToggle.addEventListener('click', () => {
+            if (document.body.classList.contains('dark')) setTheme('light');
+            else setTheme('dark');
+        });
+
+        {% if current_user.is_shift_planner %}
+        // اعلان‌ها
+        const socket = io();
+        const badge = document.getElementById('notification-badge');
+        const list = document.getElementById('notification-list');
+        let unreadCount = 0;
+
+        function showWarningModal(data) {
+            document.getElementById('warningModalBody').innerHTML = `
+                <p><strong>اپراتور:</strong> ${data.operator_name || '-'}</p>
+                <p><strong>محصول:</strong> ${data.product_name || '-'}</p>
+                <p><strong>تعداد (ساعت تولید):</strong> ${data.quantity || '-'}</p>
+                <p><strong>زمان واقعی:</strong> ${data.actual_duration || '-'}</p>
+                <p><small class="text-muted">${data.created_at}</small></p>
+            `;
+            document.getElementById('warningEditBtn').href = `/admin/edit-production/${data.report_id}`;
+            const modal = new bootstrap.Modal(document.getElementById('warningModal'));
+            modal.show();
+        }
+
+        function loadNotifications() {
+            fetch('/admin/notifications')
+                .then(r => r.json())
+                .then(data => {
+                    list.innerHTML = '';
+                    unreadCount = 0;
+                    if (data.length === 0) {
+                        list.innerHTML = '<li class="dropdown-item text-muted">اعلانی وجود ندارد</li>';
+                    } else {
+                        data.forEach(n => {
+                            const item = document.createElement('li');
+                            item.className = `dropdown-item ${n.is_read ? '' : 'fw-bold'}`;
+                            item.innerHTML = `
+                                <div class="d-flex justify-content-between">
+                                    <span>${n.message} (${n.operator_name})</span>
+                                    <small class="text-muted">${n.created_at}</small>
+                                </div>
+                            `;
+                            item.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                fetch(`/admin/notifications/read/${n.id}`, {method:'POST'});
+                                item.classList.remove('fw-bold');
+                                showWarningModal(n);
+                            });
+                            list.appendChild(item);
+                            if (!n.is_read) unreadCount++;
+                        });
+                    }
+                    updateBadge();
+                });
+        }
+
+        function updateBadge() {
+            if (unreadCount > 0) {
+                badge.style.display = 'inline';
+                badge.textContent = unreadCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        socket.on('new_warning', function(data) {
+            unreadCount++;
+            updateBadge();
+            const item = document.createElement('li');
+            item.className = 'dropdown-item fw-bold';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <span>${data.message} (${data.operator_name})</span>
+                    <small class="text-muted">${data.created_at}</small>
+                </div>
+            `;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fetch(`/admin/notifications/read/${data.id}`, {method:'POST'});
+                item.classList.remove('fw-bold');
+                showWarningModal(data);
+            });
+            list.prepend(item);
+        });
+
+        loadNotifications();
+        {% endif %}
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

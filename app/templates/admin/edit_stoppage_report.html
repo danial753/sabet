@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}ویرایش گزارش توقف{% endblock %}
+{% block content %}
+<h2>ویرایش گزارش توقف</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>شناسه گزارش:</strong> {{ report.id }}</p>
+        <p><strong>تاریخ ثبت:</strong> {{ report.date | jalali_date }}</p>
+    </div>
+</div>
+
+<form method="POST">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">کد دستگاه</label>
+            <input type="text" class="form-control" name="machine_code" value="{{ report.machine_code }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">کد توقف</label>
+            <input type="text" class="form-control" name="stop_code" value="{{ report.stop_code }}" required>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">دلیل توقف</label>
+        <textarea class="form-control" name="reason" rows="2">{{ report.reason or '' }}</textarea>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">زمان شروع</label>
+            <input type="datetime-local" class="form-control" name="start_time"
+                   value="{{ report.start_time.strftime('%Y-%m-%dT%H:%M') if report.start_time else '' }}">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">زمان پایان (راه‌اندازی)</label>
+            <input type="datetime-local" class="form-control" name="end_time"
+                   value="{{ report.end_time.strftime('%Y-%m-%dT%H:%M') if report.end_time else '' }}">
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+    <a href="{{ url_for('admin.view_user_reports') }}" class="btn btn-secondary">بازگشت</a>
+</form>
+{% endblock %}

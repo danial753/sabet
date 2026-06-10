@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}گزارش هشدارهای زمانی{% endblock %}
+{% block content %}
+<h2><i class="fas fa-exclamation-triangle me-2"></i>گزارش هشدارهای زمانی</h2>
+
+<!-- کارت‌های خلاصه -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h6 class="card-title text-danger">تعداد هشدارها</h6>
+                <h3>{{ total_warnings }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-body">
+                <h6 class="card-title text-warning">میانگین انحراف</h6>
+                <h3>{{ avg_deviation }}%</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-body">
+                <h6 class="card-title text-info">بازه زمانی</h6>
+                <p>{{ start_date or '---' }} تا {{ end_date or '---' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فیلترها -->
+<form method="GET" class="row g-2 mb-4">
+    <div class="col-md-2">
+        <select class="form-select" name="operator_id">
+            <option value="">همه اپراتورها</option>
+            {% for op in operators %}
+            <option value="{{ op.id }}" {% if operator_id == op.id %}selected{% endif %}>{{ op.full_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="machine">
+            <option value="">همه ماشین‌ها</option>
+            {% for m in machines %}
+            <option value="{{ m }}" {% if request.args.get('machine') == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="product">
+            <option value="">همه محصولات</option>
+            {% for p in products %}
+            <option value="{{ p }}" {% if request.args.get('product') == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <input type="text" class="form-control" name="start_date" placeholder="از تاریخ (شمسی)" value="{{ start_date or '' }}">
+    </div>
+    <div class="col-md-2">
+        <input type="text" class="form-control" name="end_date" placeholder="تا تاریخ (شمسی)" value="{{ end_date or '' }}">
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">فیلتر</button>
+    </div>
+</form>
+
+<!-- تب‌ها -->
+<ul class="nav nav-tabs mb-3" id="warningTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="production-tab" data-bs-toggle="tab" data-bs-target="#production" type="button" role="tab">هشدارهای تولید</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stoppage-tab" data-bs-toggle="tab" data-bs-target="#stoppage" type="button" role="tab">هشدارهای توقف</button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- تولید -->
+    <div class="tab-pane fade show active" id="production" role="tabpanel">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>تاریخ</th>
+                        <th>اپراتور</th>
+                        <th>نوع</th>
+                        <th>محصول</th>
+                        <th>تعداد</th>
+                        <th>زمان مورد انتظار</th>
+                        <th>زمان واقعی</th>
+                        <th>اختلاف (ثانیه)</th>
+                        <th>انحراف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in warning_prods %}
+                    <tr>
+                        <td>{{ r.date | jalali_date }}</td>
+                        <td>{{ r.user.full_name }}</td>
+                        <td>{{ r.type }}</td>
+                        <td>{{ r.product_name }}</td>
+                        <td>{{ r.quantity }}</td>
+                        <td>{{ r.expected_duration_formatted }}</td>
+                        <td>{{ r.duration }}</td>
+                        <td>{{ (r.duration_seconds - r.expected_duration_seconds) | int if r.duration_seconds and r.expected_duration_seconds else '-' }}</td>
+                        <td>
+                            {% if r.expected_duration_seconds and r.duration_seconds %}
+                                {{ ((r.duration_seconds - r.expected_duration_seconds) / r.expected_duration_seconds * 100) | round(1) }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not warning_prods %}
+                    <tr><td colspan="9" class="text-center">موردی یافت نشد</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- توقف -->
+    <div class="tab-pane fade" id="stoppage" role="tabpanel">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>تاریخ</th>
+                        <th>اپراتور</th>
+                        <th>کد دستگاه</th>
+                        <th>کد توقف</th>
+                        <th>زمان مورد انتظار</th>
+                        <th>زمان واقعی</th>
+                        <th>اختلاف (ثانیه)</th>
+                        <th>انحراف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in warning_stops %}
+                    <tr>
+                        <td>{{ r.date | jalali_date }}</td>
+                        <td>{{ r.user_obj.full_name if r.user_obj else '-' }}</td>
+                        <td>{{ r.machine_code }}</td>
+                        <td>{{ r.stop_code }}</td>
+                        <td>{{ r.expected_duration_formatted }}</td>
+                        <td>{{ r.duration }}</td>
+                        <td>{{ (r.duration_seconds - r.expected_duration_seconds) | int if r.duration_seconds and r.expected_duration_seconds else '-' }}</td>
+                        <td>
+                            {% if r.expected_duration_seconds and r.duration_seconds %}
+                                {{ ((r.duration_seconds - r.expected_duration_seconds) / r.expected_duration_seconds * 100) | round(1) }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not warning_stops %}
+                    <tr><td colspan="8" class="text-center">موردی یافت نشد</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
