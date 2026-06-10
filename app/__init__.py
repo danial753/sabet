@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from flask import Flask, redirect, url_for, request
 from flask_compress import Compress
 from flask_caching import Cache
@@ -8,12 +9,23 @@ from flask_login import LoginManager, current_user
 from persiantools.jdatetime import JalaliDateTime
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+=======
+from flask import Flask, redirect, url_for
+from flask_compress import Compress
+from flask_caching import Cache
+from config import Config
+from app.models import db
+from flask_login import LoginManager, current_user
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 compress = Compress()
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 300})
+<<<<<<< HEAD
 socketio = SocketIO()
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
 def create_app():
     app = Flask(__name__)
@@ -23,6 +35,7 @@ def create_app():
     login_manager.init_app(app)
     compress.init_app(app)
     cache.init_app(app)
+<<<<<<< HEAD
     socketio.init_app(app, cors_allowed_origins="*")
 
     @event.listens_for(Engine, "connect")
@@ -38,6 +51,10 @@ def create_app():
             response.cache_control.public = True
         return response
 
+=======
+
+    # Blueprint ها
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     from app.auth.routes import auth_bp
     from app.reports.routes import reports_bp
     from app.admin.routes import admin_bp
@@ -52,12 +69,15 @@ def create_app():
     app.register_blueprint(profile_bp, url_prefix='/profile')
     app.register_blueprint(analytics_bp, url_prefix='/admin')
 
+<<<<<<< HEAD
     @app.template_filter('jalali_date')
     def jalali_date_filter(dt, format='%Y-%m-%d %H:%M'):
         if dt is None:
             return '-'
         return JalaliDateTime.to_jalali(dt).strftime(format)
 
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     @app.route('/')
     def index():
         if current_user.is_authenticated:
@@ -65,12 +85,15 @@ def create_app():
                 return redirect(url_for('admin.view_user_reports'))
             if current_user.is_approver:
                 return redirect(url_for('reports.approver_dashboard'))
+<<<<<<< HEAD
             if current_user.is_shift_planner:
                 return redirect(url_for('reports.shift_planner_dashboard'))
             if current_user.is_quality_inspector:
                 return redirect(url_for('reports.quality_inspector_dashboard'))
             if current_user.is_warehouse:
                 return redirect(url_for('reports.warehouse_dashboard'))
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             return redirect(url_for('reports.dashboard'))
         return redirect(url_for('auth.login'))
 

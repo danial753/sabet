@@ -3,13 +3,31 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 
 db = SQLAlchemy()
+<<<<<<< HEAD
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
+=======
+
+IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
+
+# ------------------------------------------------------------
+#   کارخانه
+# ------------------------------------------------------------
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 class Factory(db.Model):
     __tablename__ = 'factory'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
 
+<<<<<<< HEAD
+=======
+    def __repr__(self):
+        return f'<Factory {self.name}>'
+
+# ------------------------------------------------------------
+#   کاربر
+# ------------------------------------------------------------
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -19,9 +37,12 @@ class User(UserMixin, db.Model):
     code = db.Column(db.String(20), unique=True, nullable=False, default='')
     is_admin = db.Column(db.Boolean, default=False)
     is_approver = db.Column(db.Boolean, default=False)
+<<<<<<< HEAD
     is_shift_planner = db.Column(db.Boolean, default=False)
     is_quality_inspector = db.Column(db.Boolean, default=False)
     is_warehouse = db.Column(db.Boolean, default=False)
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     factory_id = db.Column(db.Integer, db.ForeignKey('factory.id'), nullable=True)
     factory = db.relationship('Factory', backref='users', lazy=True)
 
@@ -31,10 +52,18 @@ class User(UserMixin, db.Model):
 
     @property
     def is_operator(self):
+<<<<<<< HEAD
         return (not self.is_admin and not self.is_approver and
                 not self.is_shift_planner and not self.is_quality_inspector and
                 not self.is_warehouse)
 
+=======
+        return not self.is_admin and not self.is_approver
+
+# ------------------------------------------------------------
+#   گزارش تولید
+# ------------------------------------------------------------
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 class ProductionReport(db.Model):
     __tablename__ = 'production_report'
     id = db.Column(db.Integer, primary_key=True)
@@ -57,6 +86,7 @@ class ProductionReport(db.Model):
 
     expected_duration_seconds = db.Column(db.Integer, nullable=True)
 
+<<<<<<< HEAD
     # فیلدهای نوع کار (سرپرست تولید)
     work_type = db.Column(db.String(20), nullable=True)
     work_type_approved = db.Column(db.Boolean, default=False)
@@ -65,10 +95,14 @@ class ProductionReport(db.Model):
     work_type_approved_by = db.relationship('User', foreign_keys=[work_type_approved_by_id], lazy=True)
 
     # فیلدهای تأیید تعداد (تأییدکننده کیفیت)
+=======
+    # فیلدهای تأیید
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     is_approved = db.Column(db.Boolean, default=False)
     approved_quantity = db.Column(db.Integer, nullable=True)
     approved_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     approval_date = db.Column(db.DateTime, nullable=True)
+<<<<<<< HEAD
     approved_by = db.relationship('User', foreign_keys=[approved_by_id], lazy=True)
 
     # فیلدهای بازرسی کیفیت
@@ -85,17 +119,25 @@ class ProductionReport(db.Model):
     warehouse_date = db.Column(db.DateTime, nullable=True)
     warehouse_user = db.relationship('User', foreign_keys=[warehouse_id], lazy=True)
 
+=======
+
+    approved_by = db.relationship('User', foreign_keys=[approved_by_id], lazy=True)
+
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     @property
     def shift_fa(self):
         mapping = {'A': 'صبح', 'B': 'ظهر', 'C': 'شب'}
         return mapping.get(self.shift, self.shift or '-')
 
     @property
+<<<<<<< HEAD
     def work_type_fa(self):
         mapping = {'normal': 'تولید عادی', 'holiday': 'تعطیل‌کاری', 'overtime': 'اضافه‌کاری', 'night': 'شب‌کاری'}
         return mapping.get(self.work_type, 'تعیین نشده')
 
     @property
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     def duration_seconds(self):
         if self.start_time and self.end_time:
             return int((self.end_time - self.start_time).total_seconds())
@@ -120,6 +162,7 @@ class ProductionReport(db.Model):
 
     @property
     def duration_warning(self):
+<<<<<<< HEAD
         if not self.expected_duration_seconds or not self.duration_seconds:
             return False
         setting = ConfigSetting.query.filter_by(key='warning_threshold').first()
@@ -129,6 +172,16 @@ class ProductionReport(db.Model):
         if expected == 0:
             return False
         return actual > expected * (1 + threshold / 100.0)
+=======
+        if self.expected_duration_seconds and self.duration_seconds:
+            expected = self.expected_duration_seconds
+            actual = self.duration_seconds
+            if expected == 0:
+                return False
+            if actual > expected * 1.05:
+                return True
+        return False
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     @property
     def quantity_diff(self):
@@ -136,6 +189,12 @@ class ProductionReport(db.Model):
             return self.quantity - self.approved_quantity
         return None
 
+<<<<<<< HEAD
+=======
+# ------------------------------------------------------------
+#   گزارش توقف
+# ------------------------------------------------------------
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 class StoppageReport(db.Model):
     __tablename__ = 'stoppage_report'
     id = db.Column(db.Integer, primary_key=True)
@@ -146,6 +205,10 @@ class StoppageReport(db.Model):
     reason = db.Column(db.Text, nullable=True)
     start_time = db.Column(db.DateTime, default=lambda: datetime.now(IRAN_TZ))
     end_time = db.Column(db.DateTime)
+<<<<<<< HEAD
+=======
+
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     expected_duration_seconds = db.Column(db.Integer, nullable=True)
 
     @property
@@ -173,6 +236,7 @@ class StoppageReport(db.Model):
 
     @property
     def duration_warning(self):
+<<<<<<< HEAD
         if not self.expected_duration_seconds or not self.duration_seconds:
             return False
         setting = ConfigSetting.query.filter_by(key='warning_threshold').first()
@@ -182,6 +246,16 @@ class StoppageReport(db.Model):
         if expected == 0:
             return False
         return actual > expected * (1 + threshold / 100.0)
+=======
+        if self.expected_duration_seconds and self.duration_seconds:
+            expected = self.expected_duration_seconds
+            actual = self.duration_seconds
+            if expected == 0:
+                return False
+            if actual > expected * 1.05:
+                return True
+        return False
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     @property
     def time_diff_seconds(self):
@@ -205,6 +279,12 @@ class StoppageReport(db.Model):
         diff = self.time_diff_seconds
         return diff is not None and diff > 0
 
+<<<<<<< HEAD
+=======
+# ------------------------------------------------------------
+#   لاگ سیستم
+# ------------------------------------------------------------
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 class SystemLog(db.Model):
     __tablename__ = 'system_log'
     id = db.Column(db.Integer, primary_key=True)
@@ -214,10 +294,17 @@ class SystemLog(db.Model):
     details = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(IRAN_TZ))
 
+<<<<<<< HEAD
+=======
+# ------------------------------------------------------------
+#   تنظیمات
+# ------------------------------------------------------------
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 class ConfigSetting(db.Model):
     __tablename__ = 'config_setting'
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(100), unique=True, nullable=False)
+<<<<<<< HEAD
     value = db.Column(db.String(200), nullable=False)
 
 class WorkSession(db.Model):
@@ -246,3 +333,6 @@ class Notification(db.Model):
     actual_duration = db.Column(db.String(20), nullable=True)
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(IRAN_TZ))
+=======
+    value = db.Column(db.String(200), nullable=False)
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd

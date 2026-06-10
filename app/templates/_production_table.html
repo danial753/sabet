@@ -16,11 +16,15 @@
                 <th>عنوان کار</th>
                 {% endif %}
                 <th>تعداد</th>
+<<<<<<< HEAD
                 <th>نوع کار</th>
                 <th>تأیید نوع کار</th>
                 <th>بازرس</th>
                 <th>انبار</th>
                 <th>تأیید تعداد</th>
+=======
+                <th>تأیید</th>
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                 <th>شروع</th>
                 <th>پایان</th>
                 <th>مدت واقعی</th>
@@ -30,7 +34,11 @@
         <tbody>
             {% for r in reports %}
             <tr>
+<<<<<<< HEAD
                 <td>{{ r.date | jalali_date }}</td>
+=======
+                <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                 <td>{{ r.shift_fa }}</td>
                 <td>{{ r.product_name }}</td>
                 {% if prod_type == 'CNC' %}
@@ -42,6 +50,7 @@
                 <td>{{ r.manual_title or '-' }}</td>
                 {% endif %}
                 <td>{{ r.quantity }}</td>
+<<<<<<< HEAD
                 <td>{{ r.work_type_fa }}</td>
                 <td>
                     {% if r.work_type_approved %}
@@ -69,6 +78,17 @@
                         {{ r.approved_by.full_name if r.approved_by else '---' }} ({{ r.approved_quantity }})
                     {% else %}
                         ⏳
+=======
+                <td>
+                    {% if r.is_approved %}
+                        ✅ تأیید توسط <strong>{{ r.approved_by.full_name }}</strong>
+                        <br>تعداد تأییدشده: {{ r.approved_quantity }}
+                        {% if r.quantity_diff != 0 %}
+                            <br><span class="text-danger">مغایرت: {{ r.quantity_diff }}</span>
+                        {% endif %}
+                    {% else %}
+                        ⏳ در انتظار تأیید
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                     {% endif %}
                 </td>
                 <td>{{ r.start_time.strftime('%H:%M:%S') if r.start_time else '-' }}</td>

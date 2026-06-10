@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}گزارش جامع{% endblock %}
+<<<<<<< HEAD
 {% block content %}
 <h2><i class="fas fa-file-excel me-2"></i>گزارش جامع مدیریتی</h2>
 
@@ -19,6 +20,33 @@
         <div class="col-md-3 mb-3 order-md-4">
             <label class="form-label">کد کاربر</label>
             <input type="text" class="form-control" name="user_code" placeholder="خالی = همه کاربران">
+=======
+
+{% block content %}
+<h2>گزارش جامع مدیریتی</h2>
+
+<form method="POST" action="{{ url_for('admin_report.general_report_download') }}">
+    <div class="row">
+        <!-- دکمه در سمت چپ (در RTL اولین آیتم از راست است) -->
+        <div class="col-md-3 mb-3 order-md-1">
+            <button type="submit" class="btn btn-primary w-100">📥 دانلود اکسل</button>
+        </div>
+        <!-- تا تاریخ -->
+        <div class="col-md-3 mb-3 order-md-2">
+            <label class="form-label">تا تاریخ</label>
+            <input type="date" class="form-control" name="end_date" required>
+        </div>
+        <!-- از تاریخ -->
+        <div class="col-md-3 mb-3 order-md-3">
+            <label class="form-label">از تاریخ</label>
+            <input type="date" class="form-control" name="start_date" required>
+        </div>
+        <!-- کد کاربر -->
+        <div class="col-md-3 mb-3 order-md-4">
+            <label class="form-label">کد کاربر</label>
+            <input type="text" class="form-control" name="user_code"
+                   placeholder="خالی = همه کاربران">
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         </div>
     </div>
     <div class="text-muted small mb-3">

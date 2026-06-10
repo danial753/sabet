@@ -1,17 +1,34 @@
+<<<<<<< HEAD
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.models import db, ProductionReport, StoppageReport, Notification
 from app.data_loader import get_cnc_lists, get_manall_lists, get_stoppage_lists
 from app import cache, socketio
+=======
+# app/reports/routes.py
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required, current_user
+from app.models import db, ProductionReport, StoppageReport
+from app.data_loader import get_cnc_lists, get_manall_lists, get_stoppage_lists
+from app import cache
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 from datetime import datetime, timezone, timedelta
 
 reports_bp = Blueprint('reports', __name__)
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 def can_operate():
+<<<<<<< HEAD
     return current_user.is_authenticated and current_user.is_operator
 
 def get_factory_name():
+=======
+    """کاربر عادی (اپراتور) که می‌تواند گزارش ثبت کند."""
+    return current_user.is_authenticated and current_user.is_operator
+
+def get_factory_name():
+    """نام کارخانه کاربر فعلی برای بارگذاری لیست‌های صحیح."""
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     if current_user.factory:
         return current_user.factory.name
     return 'default'
@@ -49,7 +66,11 @@ def cnc_start():
 
     active = ProductionReport.query.filter_by(user_id=current_user.id, type='CNC', end_time=None).first()
     if active:
+<<<<<<< HEAD
         return jsonify({'error': 'شما یک کار CNC فعال دارید.', 'active_report_id': active.id}), 400
+=======
+        return jsonify({'error': 'شما یک کار CNC فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_report_id': active.id}), 400
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     now = datetime.now(IRAN_TZ)
     report = ProductionReport(
@@ -74,6 +95,7 @@ def cnc_stop(report_id):
         return jsonify({'error': 'قبلاً متوقف شده'}), 400
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
+<<<<<<< HEAD
 
     # ارسال اعلان در صورت هشدار (بدون broadcast)
     if report.duration_warning:
@@ -98,6 +120,8 @@ def cnc_stop(report_id):
             'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
         })
 
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -138,7 +162,11 @@ def manall_start():
 
     active = ProductionReport.query.filter_by(user_id=current_user.id, type='ManAll', end_time=None).first()
     if active:
+<<<<<<< HEAD
         return jsonify({'error': 'شما یک کار ManAll فعال دارید.', 'active_report_id': active.id}), 400
+=======
+        return jsonify({'error': 'شما یک کار ManAll فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_report_id': active.id}), 400
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     now = datetime.now(IRAN_TZ)
     report = ProductionReport(
@@ -165,6 +193,7 @@ def manall_stop(report_id):
         return jsonify({'error': 'قبلاً متوقف شده'}), 400
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
+<<<<<<< HEAD
 
     # ارسال اعلان در صورت هشدار
     if report.duration_warning:
@@ -189,6 +218,8 @@ def manall_stop(report_id):
             'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
         })
 
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -225,7 +256,11 @@ def stoppage_start():
 
     active = StoppageReport.query.filter_by(user_id=current_user.id, end_time=None).first()
     if active:
+<<<<<<< HEAD
         return jsonify({'error': 'شما یک توقف فعال دارید.', 'active_id': active.id}), 400
+=======
+        return jsonify({'error': 'شما یک توقف فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_id': active.id}), 400
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     now = datetime.now(IRAN_TZ)
     report = StoppageReport(
@@ -251,6 +286,7 @@ def stoppage_stop(report_id):
 
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
+<<<<<<< HEAD
 
     # ارسال اعلان در صورت هشدار
     if report.duration_warning:
@@ -275,6 +311,8 @@ def stoppage_stop(report_id):
             'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
         })
 
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -304,6 +342,7 @@ def stoppage_options():
     return jsonify(get_stoppage_lists(get_factory_name()))
 
 # ------------------------------------------------------------
+<<<<<<< HEAD
 #           داشبورد و تأیید سرپرست تولید (shift_planner)
 # ------------------------------------------------------------
 @reports_bp.route('/shift-planner/dashboard')
@@ -449,10 +488,14 @@ def warehouse_confirm(report_id):
 
 # ------------------------------------------------------------
 #           Approver Dashboard (تأییدکننده کیفیت)
+=======
+#           Approver Dashboard و تأیید (فقط برای تأییدکنندگان)
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 # ------------------------------------------------------------
 @reports_bp.route('/approver/dashboard')
 @login_required
 def approver_dashboard():
+<<<<<<< HEAD
     if not current_user.is_approver and not current_user.is_admin:
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
@@ -462,12 +505,22 @@ def approver_dashboard():
         ProductionReport.warehouse_quantity != None,
         ProductionReport.is_approved == False
     ).order_by(ProductionReport.date.desc()).all()
+=======
+    if not current_user.is_approver:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+    reports = ProductionReport.query.filter_by(is_approved=False).order_by(ProductionReport.date.desc()).all()
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     return render_template('approve_dashboard.html', reports=reports)
 
 @reports_bp.route('/approver/approve/<int:report_id>', methods=['GET', 'POST'])
 @login_required
 def approve_report(report_id):
+<<<<<<< HEAD
     if not current_user.is_approver and not current_user.is_admin:
+=======
+    if not current_user.is_approver:
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
 
@@ -503,12 +556,15 @@ def approve_report(report_id):
 def production(prod_type):
     if not can_operate():
         flash('شما مجاز به ثبت تولید نیستید.', 'warning')
+<<<<<<< HEAD
         if current_user.is_shift_planner:
             return redirect(url_for('reports.shift_planner_dashboard'))
         if current_user.is_quality_inspector:
             return redirect(url_for('reports.quality_inspector_dashboard'))
         if current_user.is_warehouse:
             return redirect(url_for('reports.warehouse_dashboard'))
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         if current_user.is_approver:
             return redirect(url_for('reports.approver_dashboard'))
         return redirect(url_for('admin.view_user_reports'))
@@ -525,12 +581,15 @@ def production(prod_type):
 def stoppage():
     if not can_operate():
         flash('شما مجاز به ثبت توقف نیستید.', 'warning')
+<<<<<<< HEAD
         if current_user.is_shift_planner:
             return redirect(url_for('reports.shift_planner_dashboard'))
         if current_user.is_quality_inspector:
             return redirect(url_for('reports.quality_inspector_dashboard'))
         if current_user.is_warehouse:
             return redirect(url_for('reports.warehouse_dashboard'))
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         if current_user.is_approver:
             return redirect(url_for('reports.approver_dashboard'))
         return redirect(url_for('admin.view_user_reports'))
@@ -548,12 +607,15 @@ def stoppage():
 def dashboard():
     if current_user.is_admin:
         return redirect(url_for('admin.view_user_reports'))
+<<<<<<< HEAD
     if current_user.is_shift_planner:
         return redirect(url_for('reports.shift_planner_dashboard'))
     if current_user.is_quality_inspector:
         return redirect(url_for('reports.quality_inspector_dashboard'))
     if current_user.is_warehouse:
         return redirect(url_for('reports.warehouse_dashboard'))
+=======
+>>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     if current_user.is_approver:
         return redirect(url_for('reports.approver_dashboard'))
     return render_template('dashboard.html')
