@@ -5,7 +5,6 @@ from app.models import db, User, ProductionReport, StoppageReport
 from datetime import datetime, timezone, timedelta
 from io import BytesIO
 import openpyxl
-<<<<<<< HEAD
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from persiantools.jdatetime import JalaliDate
 from datetime import datetime as dt_datetime
@@ -13,17 +12,6 @@ from datetime import datetime as dt_datetime
 admin_report_bp = Blueprint('admin_report', __name__)
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
-=======
-from openpyxl.styles import Font, PatternFill
-
-admin_report_bp = Blueprint('admin_report', __name__)
-
-IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
-
-# ------------------------------------------------------------
-#   فرم درخواست گزارش جامع
-# ------------------------------------------------------------
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 @admin_report_bp.route('/general-report', methods=['GET'])
 @login_required
 def general_report_form():
@@ -32,12 +20,6 @@ def general_report_form():
         return redirect(url_for('reports.dashboard'))
     return render_template('admin/general_report.html')
 
-<<<<<<< HEAD
-=======
-# ------------------------------------------------------------
-#   دانلود فایل اکسل گزارش جامع (با برگه‌های جدا و ستون‌های یکسان)
-# ------------------------------------------------------------
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 @admin_report_bp.route('/general-report/download', methods=['POST'])
 @login_required
 def general_report_download():
@@ -49,10 +31,6 @@ def general_report_download():
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
 
-<<<<<<< HEAD
-=======
-    # کوئری‌های پایه
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     prod_query = ProductionReport.query
     stop_query = StoppageReport.query
 
@@ -64,107 +42,47 @@ def general_report_download():
         prod_query = prod_query.filter_by(user_id=user.id)
         stop_query = stop_query.filter_by(user_id=user.id)
 
-<<<<<<< HEAD
     if start_date:
         try:
             start_dt = JalaliDate.strptime(start_date, '%Y-%m-%d').to_gregorian()
             start_dt = dt_datetime.combine(start_dt, dt_datetime.min.time())
-=======
-    # فیلتر تاریخ
-    if start_date:
-        try:
-            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             prod_query = prod_query.filter(ProductionReport.date >= start_dt)
             stop_query = stop_query.filter(StoppageReport.date >= start_dt)
         except ValueError:
             flash('فرمت تاریخ شروع نامعتبر است.', 'danger')
             return redirect(url_for('admin_report.general_report_form'))
-<<<<<<< HEAD
 
     if end_date:
         try:
             end_dt = JalaliDate.strptime(end_date, '%Y-%m-%d').to_gregorian()
             end_dt = dt_datetime.combine(end_dt, dt_datetime.max.time())
-=======
-    if end_date:
-        try:
-            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-            end_dt = end_dt.replace(hour=23, minute=59, second=59)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             prod_query = prod_query.filter(ProductionReport.date <= end_dt)
             stop_query = stop_query.filter(StoppageReport.date <= end_dt)
         except ValueError:
             flash('فرمت تاریخ پایان نامعتبر است.', 'danger')
             return redirect(url_for('admin_report.general_report_form'))
 
-<<<<<<< HEAD
-=======
-    # دریافت داده‌ها
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     cnc_reports = prod_query.filter_by(type='CNC').order_by(ProductionReport.date.asc()).all()
     manall_reports = prod_query.filter_by(type='ManAll').order_by(ProductionReport.date.asc()).all()
     stoppage_reports = stop_query.order_by(StoppageReport.date.asc()).all()
 
-<<<<<<< HEAD
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
 
-    # استایل‌های حرفه‌ای
-    header_font = Font(name='B Nazanin', bold=True, color='FFFFFF', size=11)
+    header_font = Font(bold=True, color='FFFFFF', name='B Nazanin', size=11)
     header_fill = PatternFill(start_color='1a3a5c', end_color='1a3a5c', fill_type='solid')
-    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    cell_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    thin_border = Border(
-        left=Side(style='thin'), right=Side(style='thin'),
-        top=Side(style='thin'), bottom=Side(style='thin')
-    )
+    wrap_alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                         top=Side(style='thin'), bottom=Side(style='thin'))
 
-    HEADERS = [
-        'کد پرسنلی', 'نام اپراتور', 'نوع شیفت', 'تاریخ شیفت',
-        'نام قطعه تولیدی', 'سایز قطعه', 'عنوان مرحله', 'کد دستگاه',
-        'جمع کل زمان تولید (ثانیه)', 'تعداد واقعی تولید', 'تعداد در حال بررسی', 'تعداد انبار',
-        'زمان صرف شده', 'زمان توقف (دقیقه)', 'کد توقف', 'علت توقف'
-=======
-    # ساخت فایل اکسل
-    wb = openpyxl.Workbook()
-    wb.remove(wb.active)
-
-    # استایل‌ها
-    header_font = Font(bold=True, color='FFFFFF')
-    header_fill = PatternFill(start_color='343a40', end_color='343a40', fill_type='solid')
-
-    # ستون‌های ثابت (مطابق درخواست)
-    HEADERS = [
-        'کد پرسنلی اپراتور',     # 1
-        'نام اپراتور',           # 2
-        'نوع شیفت',              # 3
-        'تاریخ شیفت',            # 4
-        'نام قطعه تولیدی',       # 5
-        'سایز قطعه',             # 6
-        'کد فعالیت',             # 7
-        'عنوان مرحله',           # 8
-        'کد دستگاه',             # 9
-        'جمع کل زمان تولید (ثانیه)', # 10
-        'تعداد واقعی تولید',     # 11
-        'زمان صرف شده',          # 12
-        'زمان توقف (دقیقه)',     # 13
-        'کد توقف',               # 14
-        'علت توقف'               # 15
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
-    ]
-
-    def add_header(ws):
-        for col, header in enumerate(HEADERS, 1):
+    def add_header(ws, headers):
+        for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
-<<<<<<< HEAD
-            cell.alignment = header_alignment
+            cell.alignment = wrap_alignment
             cell.border = thin_border
         ws.freeze_panes = 'A2'
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     def auto_width(ws):
         for col in ws.columns:
@@ -175,170 +93,67 @@ def general_report_download():
                     max_length = max(max_length, len(str(cell.value)))
             ws.column_dimensions[col_letter].width = min(max_length + 5, 40)
 
-    def write_row(ws, row, data_dict):
-<<<<<<< HEAD
-        mapping = {
-            'کد پرسنلی': 'operator_code', 'نام اپراتور': 'operator_name',
-            'نوع شیفت': 'shift', 'تاریخ شیفت': 'shift_date',
-            'نام قطعه تولیدی': 'product_name', 'سایز قطعه': 'part_size',
-            'عنوان مرحله': 'stage_title', 'کد دستگاه': 'machine_code',
-            'جمع کل زمان تولید (ثانیه)': 'total_production_time_sec',
-            'تعداد واقعی تولید': 'actual_quantity',
-            'تعداد در حال بررسی': 'inspection_quantity',
-            'تعداد انبار': 'warehouse_quantity',
-            'زمان صرف شده': 'time_spent', 'زمان توقف (دقیقه)': 'stop_duration_min',
-            'کد توقف': 'stop_code', 'علت توقف': 'stop_reason'
-        }
-        for col, header in enumerate(HEADERS, 1):
-            value = data_dict.get(mapping[header], '-')
-            cell = ws.cell(row=row, column=col, value=value)
-            cell.alignment = cell_alignment
-            cell.border = thin_border
-            cell.font = Font(name='B Nazanin', size=10)
-
-    # ---------- CNC ----------
-=======
-        ws.cell(row=row, column=1, value=data_dict.get('operator_code', '-'))
-        ws.cell(row=row, column=2, value=data_dict.get('operator_name', '-'))
-        ws.cell(row=row, column=3, value=data_dict.get('shift', '-'))
-        ws.cell(row=row, column=4, value=data_dict.get('shift_date', '-'))
-        ws.cell(row=row, column=5, value=data_dict.get('product_name', '-'))
-        ws.cell(row=row, column=6, value=data_dict.get('part_size', '-'))
-        ws.cell(row=row, column=7, value=data_dict.get('activity_code', '-'))
-        ws.cell(row=row, column=8, value=data_dict.get('stage_title', '-'))
-        ws.cell(row=row, column=9, value=data_dict.get('machine_code', '-'))
-        ws.cell(row=row, column=10, value=data_dict.get('total_production_time_sec', 0))
-        ws.cell(row=row, column=11, value=data_dict.get('actual_quantity', 0))
-        ws.cell(row=row, column=12, value=data_dict.get('time_spent', 0))
-        ws.cell(row=row, column=13, value=data_dict.get('stop_duration_min', 0))
-        ws.cell(row=row, column=14, value=data_dict.get('stop_code', '-'))
-        ws.cell(row=row, column=15, value=data_dict.get('stop_reason', '-'))
-
     # ---------- برگه CNC ----------
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     ws_cnc = wb.create_sheet('CNC')
     ws_cnc.sheet_view.rightToLeft = True
-    add_header(ws_cnc)
+    cnc_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'سایز قطعه',
+                   'کد دستگاه', 'کد مرحله کاری', 'تعداد', 'تعداد اصلاحی',
+                   'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    add_header(ws_cnc, cnc_headers)
     row = 2
     for r in cnc_reports:
-        user = r.user
-        data = {
-            'operator_code': user.code if user else '-',
-            'operator_name': user.full_name if user else '-',
-            'shift': r.shift_fa or '-',
-            'shift_date': r.date.strftime('%Y-%m-%d %H:%M'),
-            'product_name': r.product_name or '-',
-            'part_size': r.part_size or '-',
-<<<<<<< HEAD
-            'stage_title': r.manual_title or r.operation_stage_code or '-',
-            'machine_code': r.machine_code or '-',
-            'total_production_time_sec': r.duration_seconds or 0,
-            'actual_quantity': r.approved_quantity if (r.is_approved and r.approved_quantity is not None) else (r.quantity or 0),
-            'inspection_quantity': r.inspection_quantity if r.inspection_quantity is not None else '-',
-            'warehouse_quantity': r.warehouse_quantity if r.warehouse_quantity is not None else '-',
-            'time_spent': r.duration_seconds or 0,
-            'stop_duration_min': 0, 'stop_code': '-', 'stop_reason': '-'
-=======
-            'activity_code': r.operation_stage_code or '-',
-            'stage_title': r.manual_title or '-',
-            'machine_code': r.machine_code or '-',
-            'total_production_time_sec': r.duration_seconds or 0,
-            'actual_quantity': r.approved_quantity if (r.is_approved and r.approved_quantity is not None) else (r.quantity or 0),
-            'time_spent': r.duration_seconds or 0,
-            'stop_duration_min': 0,
-            'stop_code': '-',
-            'stop_reason': '-'
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
-        }
-        write_row(ws_cnc, row, data)
+        ws_cnc.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_cnc.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
+        ws_cnc.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
+        ws_cnc.cell(row=row, column=4, value=r.shift_fa).border = thin_border
+        ws_cnc.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
+        ws_cnc.cell(row=row, column=6, value=r.part_size or '-').border = thin_border
+        ws_cnc.cell(row=row, column=7, value=r.machine_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=8, value=r.operation_stage_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=9, value=r.quantity).border = thin_border
+        ws_cnc.cell(row=row, column=10, value=r.inspection_quantity if r.inspection_quantity is not None else '-').border = thin_border
+        ws_cnc.cell(row=row, column=11, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_cnc.cell(row=row, column=12, value=r.duration or '-').border = thin_border
+        ws_cnc.cell(row=row, column=13, value=r.time_diff_formatted or '-').border = thin_border
         row += 1
     auto_width(ws_cnc)
 
-<<<<<<< HEAD
-    # ---------- Manual ----------
-=======
     # ---------- برگه Manual ----------
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     ws_man = wb.create_sheet('Manual')
     ws_man.sheet_view.rightToLeft = True
-    add_header(ws_man)
+    man_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'عنوان کار منوال',
+                   'تعداد', 'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    add_header(ws_man, man_headers)
     row = 2
     for r in manall_reports:
-        user = r.user
-        data = {
-            'operator_code': user.code if user else '-',
-            'operator_name': user.full_name if user else '-',
-            'shift': r.shift_fa or '-',
-            'shift_date': r.date.strftime('%Y-%m-%d %H:%M'),
-            'product_name': r.product_name or '-',
-<<<<<<< HEAD
-            'part_size': '-',
-            'stage_title': r.manual_title or r.operation_stage_code or '-',
-            'machine_code': r.machine_code or '-',
-            'total_production_time_sec': r.duration_seconds or 0,
-            'actual_quantity': r.approved_quantity if (r.is_approved and r.approved_quantity is not None) else (r.quantity or 0),
-            'inspection_quantity': r.inspection_quantity if r.inspection_quantity is not None else '-',
-            'warehouse_quantity': r.warehouse_quantity if r.warehouse_quantity is not None else '-',
-            'time_spent': r.duration_seconds or 0,
-            'stop_duration_min': 0, 'stop_code': '-', 'stop_reason': '-'
-=======
-            'part_size': '-',              # Manual سایز قطعه ندارد
-            'activity_code': r.operation_stage_code or '-',
-            'stage_title': r.manual_title or '-',
-            'machine_code': r.machine_code or '-',
-            'total_production_time_sec': r.duration_seconds or 0,
-            'actual_quantity': r.approved_quantity if (r.is_approved and r.approved_quantity is not None) else (r.quantity or 0),
-            'time_spent': r.duration_seconds or 0,
-            'stop_duration_min': 0,
-            'stop_code': '-',
-            'stop_reason': '-'
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
-        }
-        write_row(ws_man, row, data)
+        ws_man.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_man.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
+        ws_man.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
+        ws_man.cell(row=row, column=4, value=r.shift_fa).border = thin_border
+        ws_man.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
+        ws_man.cell(row=row, column=6, value=r.manual_title or '-').border = thin_border
+        ws_man.cell(row=row, column=7, value=r.quantity).border = thin_border
+        ws_man.cell(row=row, column=8, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_man.cell(row=row, column=9, value=r.duration or '-').border = thin_border
+        ws_man.cell(row=row, column=10, value=r.time_diff_formatted or '-').border = thin_border
         row += 1
     auto_width(ws_man)
 
-<<<<<<< HEAD
-    # ---------- توقف ----------
-=======
     # ---------- برگه توقف ----------
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     ws_stop = wb.create_sheet('توقف')
     ws_stop.sheet_view.rightToLeft = True
-    add_header(ws_stop)
+    stop_headers = ['تاریخ ثبت', 'کد اپراتور', 'کد توقف', 'دلیل (اختیاری)',
+                    'زمان مورد انتظار توقف', 'زمان اجرایی']
+    add_header(ws_stop, stop_headers)
     row = 2
     for r in stoppage_reports:
         user = User.query.get(r.user_id) if r.user_id else None
-        duration_min = round((r.duration_seconds or 0) / 60, 2)
-        data = {
-            'operator_code': user.code if user else '-',
-            'operator_name': user.full_name if user else '-',
-<<<<<<< HEAD
-            'shift': '-', 'shift_date': r.date.strftime('%Y-%m-%d %H:%M'),
-            'product_name': '-', 'part_size': '-', 'stage_title': '-',
-            'machine_code': r.machine_code or '-',
-            'total_production_time_sec': 0, 'actual_quantity': 0,
-            'inspection_quantity': '-', 'warehouse_quantity': '-',
-            'time_spent': 0,
-            'stop_duration_min': duration_min,
-            'stop_code': r.stop_code or '-', 'stop_reason': r.reason or '-'
-=======
-            'shift': '-',                # توقف شیفت ندارد
-            'shift_date': r.date.strftime('%Y-%m-%d %H:%M'),
-            'product_name': '-',
-            'part_size': '-',
-            'activity_code': '-',
-            'stage_title': '-',
-            'machine_code': r.machine_code or '-',
-            'total_production_time_sec': 0,
-            'actual_quantity': 0,
-            'time_spent': 0,
-            'stop_duration_min': duration_min,
-            'stop_code': r.stop_code or '-',
-            'stop_reason': r.reason or '-'
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
-        }
-        write_row(ws_stop, row, data)
+        ws_stop.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_stop.cell(row=row, column=2, value=user.code if user else '-').border = thin_border
+        ws_stop.cell(row=row, column=3, value=r.stop_code or '-').border = thin_border
+        ws_stop.cell(row=row, column=4, value=r.reason or '-').border = thin_border
+        ws_stop.cell(row=row, column=5, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_stop.cell(row=row, column=6, value=r.duration or '-').border = thin_border
         row += 1
     auto_width(ws_stop)
 

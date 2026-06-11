@@ -1,14 +1,7 @@
 {% extends "base.html" %}
 {% block title %}مشاهده گزارش کاربر{% endblock %}
-<<<<<<< HEAD
 {% block content %}
 <h2>مشاهده گزارش کاربر</h2>
-=======
-
-{% block content %}
-<h2>مشاهده گزارش کاربر</h2>
-
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 <form method="POST" class="mb-4">
     <div class="row">
         <div class="col-md-3 mb-3">
@@ -17,23 +10,12 @@
                    value="{{ request.form.user_code if request.form.user_code else '' }}">
         </div>
         <div class="col-md-3 mb-3">
-<<<<<<< HEAD
             <label class="form-label">از تاریخ (شمسی)</label>
             <input type="text" class="form-control" name="start_date" placeholder="YYYY-MM-DD" value="{{ start_date or '' }}">
         </div>
         <div class="col-md-3 mb-3">
             <label class="form-label">تا تاریخ (شمسی)</label>
             <input type="text" class="form-control" name="end_date" placeholder="YYYY-MM-DD" value="{{ end_date or '' }}">
-=======
-            <label class="form-label">از تاریخ</label>
-            <input type="date" class="form-control" name="start_date"
-                   value="{{ start_date or '' }}">
-        </div>
-        <div class="col-md-3 mb-3">
-            <label class="form-label">تا تاریخ</label>
-            <input type="date" class="form-control" name="end_date"
-                   value="{{ end_date or '' }}">
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         </div>
         <div class="col-md-2 mb-3 d-flex align-items-end">
             <button type="submit" class="btn btn-primary w-100">نمایش گزارش‌ها</button>
@@ -42,13 +24,36 @@
 </form>
 
 {% if user %}
-<<<<<<< HEAD
     <div class="alert alert-info">
         گزارش‌های کاربر: <strong>{{ user.full_name }}</strong> (کد: {{ user.code }})
         {% if start_date or end_date %}
             <br><small>فیلتر تاریخ: {{ start_date or 'نامحدود' }} تا {{ end_date or 'نامحدود' }}</small>
         {% endif %}
     </div>
+
+    <!-- ***** دکمه‌های دانلود ***** -->
+    <div class="mb-3">
+        <!-- دکمه قدیمی -->
+        <form method="POST" action="{{ url_for('admin.download_user_reports_excel') }}" class="d-inline">
+            <input type="hidden" name="user_code" value="{{ user.code }}">
+            <input type="hidden" name="start_date" value="{{ start_date or '' }}">
+            <input type="hidden" name="end_date" value="{{ end_date or '' }}">
+            <button type="submit" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-file-excel me-1"></i> دانلود اکسل (قدیمی)
+            </button>
+        </form>
+
+        <!-- دکمه جدید با قالب درخواستی -->
+        <form method="POST" action="{{ url_for('admin.download_formatted_excel') }}" class="d-inline ms-2">
+            <input type="hidden" name="user_code" value="{{ user.code }}">
+            <input type="hidden" name="start_date" value="{{ start_date or '' }}">
+            <input type="hidden" name="end_date" value="{{ end_date or '' }}">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-file-excel me-1"></i> دانلود اکسل (قالب جدید)
+            </button>
+        </form>
+    </div>
+    <!-- ************************** -->
 
     <ul class="nav nav-tabs mb-4" id="adminReportTabs" role="tablist">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cnc" type="button">CNC</button></li>
@@ -58,89 +63,40 @@
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="cnc">
-=======
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="alert alert-info mb-0">
-            گزارش‌های کاربر: <strong>{{ user.full_name }}</strong> (کد: {{ user.code }})
-            {% if start_date or end_date %}
-                <br><small>فیلتر تاریخ: {{ start_date or 'نامحدود' }} تا {{ end_date or 'نامحدود' }}</small>
-            {% endif %}
-        </div>
-        <button type="button" class="btn btn-success" onclick="downloadExcel()">
-            📥 دانلود فایل اکسل
-        </button>
-    </div>
-
-    <ul class="nav nav-tabs mb-4" id="adminReportTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="cnc-tab" data-bs-toggle="tab" data-bs-target="#cnc" type="button" role="tab">CNC</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="manall-tab" data-bs-toggle="tab" data-bs-target="#manall" type="button" role="tab">ManAll</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="stoppage-tab" data-bs-toggle="tab" data-bs-target="#stoppage" type="button" role="tab">توقف</button>
-        </li>
-    </ul>
-
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="cnc" role="tabpanel">
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             <h5>گزارش‌های CNC</h5>
             {% with reports = cnc_reports, prod_type = 'CNC' %}
                 {% include "_production_table.html" %}
             {% endwith %}
         </div>
-<<<<<<< HEAD
         <div class="tab-pane fade" id="manall">
-=======
-        <div class="tab-pane fade" id="manall" role="tabpanel">
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             <h5>گزارش‌های ManAll</h5>
             {% with reports = manall_reports, prod_type = 'ManAll' %}
                 {% include "_production_table.html" %}
             {% endwith %}
         </div>
-<<<<<<< HEAD
         <div class="tab-pane fade" id="stoppage">
-=======
-        <div class="tab-pane fade" id="stoppage" role="tabpanel">
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             <h5>گزارش‌های توقف</h5>
             {% if stoppage_reports %}
             <div class="table-responsive">
                 <table class="table table-striped table-bordered">
                     <thead class="table-dark">
                         <tr>
-<<<<<<< HEAD
                             <th>تاریخ</th><th>کد دستگاه</th><th>کد توقف</th><th>دلیل</th><th>شروع</th><th>پایان</th><th>مدت</th><th>عملیات</th>
-=======
-                            <th>تاریخ</th><th>کد دستگاه</th><th>کد توقف</th><th>دلیل</th><th>شروع</th><th>پایان</th><th>مدت</th>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                         </tr>
                     </thead>
                     <tbody>
                         {% for r in stoppage_reports %}
                         <tr>
-<<<<<<< HEAD
                             <td>{{ r.date | jalali_date }}</td>
-=======
-                            <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                             <td>{{ r.machine_code }}</td>
                             <td>{{ r.stop_code }}</td>
                             <td>{{ r.reason or '-' }}</td>
                             <td>{{ r.start_time.strftime('%H:%M:%S') if r.start_time else '-' }}</td>
                             <td>{{ r.end_time.strftime('%H:%M:%S') if r.end_time else '-' }}</td>
                             <td>{{ r.duration or '-' }}</td>
-<<<<<<< HEAD
                             <td>
-                                <a href="{{ url_for('admin.edit_stoppage_report', report_id=r.id) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i> ویرایش
-                                </a>
+                                <a href="{{ url_for('admin.edit_stoppage_report', report_id=r.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> ویرایش</a>
                             </td>
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -152,38 +108,4 @@
         </div>
     </div>
 {% endif %}
-<<<<<<< HEAD
-=======
-{% endblock %}
-
-{% block scripts %}
-<script>
-function downloadExcel() {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = "{{ url_for('admin.download_user_reports_excel') }}";
-    form.style.display = 'none';
-
-    const userCode = document.querySelector('input[name="user_code"]').value;
-    const startDate = document.querySelector('input[name="start_date"]').value;
-    const endDate = document.querySelector('input[name="end_date"]').value;
-
-    const addField = (name, value) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        form.appendChild(input);
-    };
-
-    addField('user_code', userCode);
-    addField('start_date', startDate);
-    addField('end_date', endDate);
-
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-}
-</script>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 {% endblock %}

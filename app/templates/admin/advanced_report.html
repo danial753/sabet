@@ -1,60 +1,78 @@
 {% extends "base.html" %}
 {% block title %}گزارش پیشرفته{% endblock %}
 {% block content %}
-<h2>گزارش ترکیبی تولید</h2>
+<h2><i class="fas fa-filter me-2"></i>گزارش ترکیبی تولید</h2>
+
 <form method="POST" class="row g-2 mb-4">
     <div class="col-md-2">
         <select name="machine" class="form-select">
             <option value="">همه ماشین‌ها</option>
-            {% for m in machines %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+            {% for m in machines %}
+            <option value="{{ m }}" {% if request.form.get('machine') == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
         </select>
     </div>
     <div class="col-md-2">
         <select name="product" class="form-select">
             <option value="">همه محصولات</option>
-            {% for p in products %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+            {% for p in products %}
+            <option value="{{ p }}" {% if request.form.get('product') == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
         </select>
     </div>
     <div class="col-md-2">
         <select name="shift" class="form-select">
             <option value="">همه شیفت‌ها</option>
-            <option value="A">صبح</option>
-            <option value="B">ظهر</option>
-            <option value="C">شب</option>
+            <option value="A" {% if request.form.get('shift') == 'A' %}selected{% endif %}>صبح</option>
+            <option value="B" {% if request.form.get('shift') == 'B' %}selected{% endif %}>ظهر</option>
+            <option value="C" {% if request.form.get('shift') == 'C' %}selected{% endif %}>شب</option>
         </select>
     </div>
     <div class="col-md-2">
-<<<<<<< HEAD
         <select name="work_type" class="form-select">
             <option value="">همه نوع کارها</option>
-            <option value="normal">تولید عادی</option>
-            <option value="holiday">تعطیل‌کاری</option>
-            <option value="overtime">اضافه‌کاری</option>
-            <option value="night">شب‌کاری</option>
+            <option value="normal" {% if request.form.get('work_type') == 'normal' %}selected{% endif %}>تولید عادی</option>
+            <option value="holiday" {% if request.form.get('work_type') == 'holiday' %}selected{% endif %}>تعطیل‌کاری</option>
+            <option value="overtime" {% if request.form.get('work_type') == 'overtime' %}selected{% endif %}>اضافه‌کاری</option>
+            <option value="night" {% if request.form.get('work_type') == 'night' %}selected{% endif %}>شب‌کاری</option>
         </select>
     </div>
     <div class="col-md-2">
-        <input type="text" class="form-control" name="start_date" placeholder="از تاریخ (شمسی)">
+        <input type="text" class="form-control" name="start_date" placeholder="از تاریخ (شمسی)" value="{{ request.form.get('start_date', '') }}">
     </div>
     <div class="col-md-2">
-        <input type="text" class="form-control" name="end_date" placeholder="تا تاریخ (شمسی)">
+        <input type="text" class="form-control" name="end_date" placeholder="تا تاریخ (شمسی)" value="{{ request.form.get('end_date', '') }}">
     </div>
     <div class="col-md-2 mt-2">
-=======
-        <input type="date" name="start_date" class="form-control" placeholder="از تاریخ">
-    </div>
-    <div class="col-md-2">
-        <input type="date" name="end_date" class="form-control" placeholder="تا تاریخ">
-    </div>
-    <div class="col-md-2">
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         <button type="submit" class="btn btn-primary w-100">فیلتر</button>
     </div>
 </form>
 
 {% if reports %}
-    {% include "_production_table.html" with context %}
+    {% set cnc_reports = [] %}
+    {% set manall_reports = [] %}
+    {% for r in reports %}
+        {% if r.type == 'CNC' %}
+            {% set _ = cnc_reports.append(r) %}
+        {% else %}
+            {% set _ = manall_reports.append(r) %}
+        {% endif %}
+    {% endfor %}
+
+    {% if cnc_reports %}
+    <h5>گزارش‌های CNC</h5>
+    {% with reports=cnc_reports, prod_type='CNC' %}
+        {% include "_production_table.html" %}
+    {% endwith %}
+    {% endif %}
+
+    {% if manall_reports %}
+    <h5>گزارش‌های Manual</h5>
+    {% with reports=manall_reports, prod_type='ManAll' %}
+        {% include "_production_table.html" %}
+    {% endwith %}
+    {% endif %}
 {% else %}
-    <p>گزارشی یافت نشد.</p>
+    <div class="alert alert-info">گزارشی با این شرایط یافت نشد.</div>
 {% endif %}
 {% endblock %}

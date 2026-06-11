@@ -1,34 +1,17 @@
-<<<<<<< HEAD
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.models import db, ProductionReport, StoppageReport, Notification
 from app.data_loader import get_cnc_lists, get_manall_lists, get_stoppage_lists
 from app import cache, socketio
-=======
-# app/reports/routes.py
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
-from app.models import db, ProductionReport, StoppageReport
-from app.data_loader import get_cnc_lists, get_manall_lists, get_stoppage_lists
-from app import cache
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 from datetime import datetime, timezone, timedelta
 
 reports_bp = Blueprint('reports', __name__)
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 def can_operate():
-<<<<<<< HEAD
     return current_user.is_authenticated and current_user.is_operator
 
 def get_factory_name():
-=======
-    """کاربر عادی (اپراتور) که می‌تواند گزارش ثبت کند."""
-    return current_user.is_authenticated and current_user.is_operator
-
-def get_factory_name():
-    """نام کارخانه کاربر فعلی برای بارگذاری لیست‌های صحیح."""
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     if current_user.factory:
         return current_user.factory.name
     return 'default'
@@ -54,6 +37,7 @@ def cnc_start():
     expected_hours = data.get('expected_hours', 0)
     expected_minutes = data.get('expected_minutes', 0)
     expected_seconds = data.get('expected_seconds', 0)
+    feed_percent = data.get('feed_percent', 100)
 
     if not all([product_name, quantity, shift, part_size, machine_code, operation_stage_code]):
         return jsonify({'error': 'همه فیلدها الزامی هستند'}), 400
@@ -61,16 +45,15 @@ def cnc_start():
     try:
         qty = int(quantity)
         total_expected = int(expected_hours) * 3600 + int(expected_minutes) * 60 + int(expected_seconds)
-    except ValueError:
+        feed_percent = int(feed_percent)
+        if feed_percent < 1 or feed_percent > 150:
+            feed_percent = 100
+    except (ValueError, TypeError):
         return jsonify({'error': 'مقادیر عددی نامعتبر'}), 400
 
     active = ProductionReport.query.filter_by(user_id=current_user.id, type='CNC', end_time=None).first()
     if active:
-<<<<<<< HEAD
         return jsonify({'error': 'شما یک کار CNC فعال دارید.', 'active_report_id': active.id}), 400
-=======
-        return jsonify({'error': 'شما یک کار CNC فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_report_id': active.id}), 400
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     now = datetime.now(IRAN_TZ)
     report = ProductionReport(
@@ -79,7 +62,8 @@ def cnc_start():
         part_size=part_size, machine_code=machine_code,
         operation_stage_code=operation_stage_code,
         start_time=now,
-        expected_duration_seconds=total_expected
+        expected_duration_seconds=total_expected,
+        feed_percent=feed_percent
     )
     db.session.add(report)
     db.session.commit()
@@ -95,17 +79,21 @@ def cnc_stop(report_id):
         return jsonify({'error': 'قبلاً متوقف شده'}), 400
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
-<<<<<<< HEAD
 
-    # ارسال اعلان در صورت هشدار (بدون broadcast)
     if report.duration_warning:
+        deviation = 0
+        if report.expected_duration_seconds and report.duration_seconds:
+            deviation = round((report.duration_seconds - report.expected_duration_seconds) / 60, 1)
+
         notif = Notification(
             message=f"⚠️ هشدار زمان تولید {report.type}",
             report_id=report.id,
             operator_name=report.user.full_name,
             product_name=report.product_name,
             quantity=report.quantity,
-            actual_duration=report.duration
+            actual_duration=report.duration,
+            expected_duration=report.expected_duration_formatted,
+            deviation_minutes=deviation
         )
         db.session.add(notif)
         db.session.commit()
@@ -117,11 +105,11 @@ def cnc_stop(report_id):
             'product_name': notif.product_name,
             'quantity': notif.quantity,
             'actual_duration': notif.actual_duration,
+            'expected_duration': notif.expected_duration,
+            'deviation_minutes': notif.deviation_minutes,
             'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
         })
 
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -145,13 +133,12 @@ def manall_start():
     quantity = data.get('quantity')
     shift = data.get('shift')
     machine_code = data.get('machine_code')
-    operation_stage_code = data.get('operation_stage_code')
     manual_title = data.get('manual_title', '')
     expected_hours = data.get('expected_hours', 0)
     expected_minutes = data.get('expected_minutes', 0)
     expected_seconds = data.get('expected_seconds', 0)
 
-    if not all([product_name, quantity, shift, machine_code, operation_stage_code]):
+    if not all([product_name, quantity, shift, machine_code]):
         return jsonify({'error': 'همه فیلدهای اجباری را پر کنید'}), 400
 
     try:
@@ -162,11 +149,7 @@ def manall_start():
 
     active = ProductionReport.query.filter_by(user_id=current_user.id, type='ManAll', end_time=None).first()
     if active:
-<<<<<<< HEAD
         return jsonify({'error': 'شما یک کار ManAll فعال دارید.', 'active_report_id': active.id}), 400
-=======
-        return jsonify({'error': 'شما یک کار ManAll فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_report_id': active.id}), 400
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     now = datetime.now(IRAN_TZ)
     report = ProductionReport(
@@ -174,7 +157,7 @@ def manall_start():
         product_name=product_name, quantity=qty, shift=shift,
         part_size='',
         machine_code=machine_code,
-        operation_stage_code=operation_stage_code,
+        operation_stage_code='',
         manual_title=manual_title,
         start_time=now,
         expected_duration_seconds=total_expected
@@ -193,17 +176,21 @@ def manall_stop(report_id):
         return jsonify({'error': 'قبلاً متوقف شده'}), 400
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
-<<<<<<< HEAD
 
-    # ارسال اعلان در صورت هشدار
     if report.duration_warning:
+        deviation = 0
+        if report.expected_duration_seconds and report.duration_seconds:
+            deviation = round((report.duration_seconds - report.expected_duration_seconds) / 60, 1)
+
         notif = Notification(
             message=f"⚠️ هشدار زمان تولید {report.type}",
             report_id=report.id,
             operator_name=report.user.full_name,
             product_name=report.product_name,
             quantity=report.quantity,
-            actual_duration=report.duration
+            actual_duration=report.duration,
+            expected_duration=report.expected_duration_formatted,
+            deviation_minutes=deviation
         )
         db.session.add(notif)
         db.session.commit()
@@ -215,11 +202,11 @@ def manall_stop(report_id):
             'product_name': notif.product_name,
             'quantity': notif.quantity,
             'actual_duration': notif.actual_duration,
+            'expected_duration': notif.expected_duration,
+            'deviation_minutes': notif.deviation_minutes,
             'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
         })
 
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -256,11 +243,7 @@ def stoppage_start():
 
     active = StoppageReport.query.filter_by(user_id=current_user.id, end_time=None).first()
     if active:
-<<<<<<< HEAD
         return jsonify({'error': 'شما یک توقف فعال دارید.', 'active_id': active.id}), 400
-=======
-        return jsonify({'error': 'شما یک توقف فعال دارید. لطفاً ابتدا آن را متوقف کنید.', 'active_id': active.id}), 400
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     now = datetime.now(IRAN_TZ)
     report = StoppageReport(
@@ -286,17 +269,21 @@ def stoppage_stop(report_id):
 
     report.end_time = datetime.now(IRAN_TZ)
     db.session.commit()
-<<<<<<< HEAD
 
-    # ارسال اعلان در صورت هشدار
     if report.duration_warning:
+        deviation = 0
+        if report.expected_duration_seconds and report.duration_seconds:
+            deviation = round((report.duration_seconds - report.expected_duration_seconds) / 60, 1)
+
         notif = Notification(
             message=f"⚠️ هشدار زمان توقف",
             report_id=report.id,
-            operator_name=str(report.user_id),   # چون رابطه مستقیم با User نداریم
+            operator_name=str(report.user_id),
             product_name=f"دستگاه {report.machine_code}",
             quantity=0,
-            actual_duration=report.duration
+            actual_duration=report.duration,
+            expected_duration=report.expected_duration_formatted,
+            deviation_minutes=deviation
         )
         db.session.add(notif)
         db.session.commit()
@@ -308,11 +295,11 @@ def stoppage_stop(report_id):
             'product_name': notif.product_name,
             'quantity': 0,
             'actual_duration': notif.actual_duration,
+            'expected_duration': notif.expected_duration,
+            'deviation_minutes': notif.deviation_minutes,
             'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M')
         })
 
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     return jsonify({
         'end_time': report.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         'duration': report.duration,
@@ -342,7 +329,6 @@ def stoppage_options():
     return jsonify(get_stoppage_lists(get_factory_name()))
 
 # ------------------------------------------------------------
-<<<<<<< HEAD
 #           داشبورد و تأیید سرپرست تولید (shift_planner)
 # ------------------------------------------------------------
 @reports_bp.route('/shift-planner/dashboard')
@@ -377,7 +363,6 @@ def approve_work_type(report_id):
         report.work_type_approved_by_id = current_user.id
         report.work_type_approval_date = datetime.now(IRAN_TZ)
 
-        # اگر تعداد هم وارد شد، آن را نیز تأیید کند (یکپارچه)
         approved_quantity = request.form.get('approved_quantity')
         if approved_quantity and approved_quantity.strip():
             try:
@@ -397,7 +382,7 @@ def approve_work_type(report_id):
     return render_template('approve_work_type.html', report=report)
 
 # ------------------------------------------------------------
-#           Quality Inspector Dashboard (بازرس کیفیت)
+#           Quality Inspector Dashboard (بازرس کیفیت) – فقط CNC
 # ------------------------------------------------------------
 @reports_bp.route('/quality-inspector/dashboard')
 @login_required
@@ -407,6 +392,7 @@ def quality_inspector_dashboard():
         return redirect(url_for('reports.dashboard'))
     reports = ProductionReport.query.filter(
         ProductionReport.work_type_approved == True,
+        ProductionReport.type == 'CNC',
         ProductionReport.inspection_status == None
     ).order_by(ProductionReport.date.desc()).all()
     return render_template('quality_inspector_dashboard.html', reports=reports)
@@ -453,7 +439,6 @@ def warehouse_dashboard():
         return redirect(url_for('reports.dashboard'))
     reports = ProductionReport.query.filter(
         ProductionReport.work_type_approved == True,
-        ProductionReport.inspection_status == 'inspected',
         ProductionReport.warehouse_quantity == None
     ).order_by(ProductionReport.date.desc()).all()
     return render_template('warehouse_dashboard.html', reports=reports)
@@ -488,39 +473,38 @@ def warehouse_confirm(report_id):
 
 # ------------------------------------------------------------
 #           Approver Dashboard (تأییدکننده کیفیت)
-=======
-#           Approver Dashboard و تأیید (فقط برای تأییدکنندگان)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 # ------------------------------------------------------------
 @reports_bp.route('/approver/dashboard')
 @login_required
 def approver_dashboard():
-<<<<<<< HEAD
     if not current_user.is_approver and not current_user.is_admin:
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
-    reports = ProductionReport.query.filter(
+
+    # CNC: باید بازرسی شده و انبار تأیید کرده باشد
+    cnc_ready = ProductionReport.query.filter(
         ProductionReport.work_type_approved == True,
+        ProductionReport.type == 'CNC',
         ProductionReport.inspection_status == 'inspected',
         ProductionReport.warehouse_quantity != None,
         ProductionReport.is_approved == False
-    ).order_by(ProductionReport.date.desc()).all()
-=======
-    if not current_user.is_approver:
-        flash('دسترسی غیرمجاز', 'danger')
-        return redirect(url_for('reports.dashboard'))
-    reports = ProductionReport.query.filter_by(is_approved=False).order_by(ProductionReport.date.desc()).all()
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
+    )
+
+    # Manual: فقط تأیید سرپرست و انبار کافی است (بدون بازرسی)
+    man_ready = ProductionReport.query.filter(
+        ProductionReport.work_type_approved == True,
+        ProductionReport.type == 'ManAll',
+        ProductionReport.warehouse_quantity != None,
+        ProductionReport.is_approved == False
+    )
+
+    reports = cnc_ready.union(man_ready).order_by(ProductionReport.date.desc()).all()
     return render_template('approve_dashboard.html', reports=reports)
 
 @reports_bp.route('/approver/approve/<int:report_id>', methods=['GET', 'POST'])
 @login_required
 def approve_report(report_id):
-<<<<<<< HEAD
     if not current_user.is_approver and not current_user.is_admin:
-=======
-    if not current_user.is_approver:
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
 
@@ -556,15 +540,12 @@ def approve_report(report_id):
 def production(prod_type):
     if not can_operate():
         flash('شما مجاز به ثبت تولید نیستید.', 'warning')
-<<<<<<< HEAD
         if current_user.is_shift_planner:
             return redirect(url_for('reports.shift_planner_dashboard'))
         if current_user.is_quality_inspector:
             return redirect(url_for('reports.quality_inspector_dashboard'))
         if current_user.is_warehouse:
             return redirect(url_for('reports.warehouse_dashboard'))
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         if current_user.is_approver:
             return redirect(url_for('reports.approver_dashboard'))
         return redirect(url_for('admin.view_user_reports'))
@@ -581,15 +562,12 @@ def production(prod_type):
 def stoppage():
     if not can_operate():
         flash('شما مجاز به ثبت توقف نیستید.', 'warning')
-<<<<<<< HEAD
         if current_user.is_shift_planner:
             return redirect(url_for('reports.shift_planner_dashboard'))
         if current_user.is_quality_inspector:
             return redirect(url_for('reports.quality_inspector_dashboard'))
         if current_user.is_warehouse:
             return redirect(url_for('reports.warehouse_dashboard'))
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         if current_user.is_approver:
             return redirect(url_for('reports.approver_dashboard'))
         return redirect(url_for('admin.view_user_reports'))
@@ -607,15 +585,12 @@ def stoppage():
 def dashboard():
     if current_user.is_admin:
         return redirect(url_for('admin.view_user_reports'))
-<<<<<<< HEAD
     if current_user.is_shift_planner:
         return redirect(url_for('reports.shift_planner_dashboard'))
     if current_user.is_quality_inspector:
         return redirect(url_for('reports.quality_inspector_dashboard'))
     if current_user.is_warehouse:
         return redirect(url_for('reports.warehouse_dashboard'))
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     if current_user.is_approver:
         return redirect(url_for('reports.approver_dashboard'))
     return render_template('dashboard.html')

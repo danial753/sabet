@@ -3,7 +3,6 @@
 {% block content %}
 <h2><i class="fas fa-exclamation-triangle me-2"></i>گزارش هشدارهای زمانی</h2>
 
-<!-- کارت‌های خلاصه -->
 <div class="row mb-4">
     <div class="col-md-4">
         <div class="card border-danger">
@@ -31,7 +30,6 @@
     </div>
 </div>
 
-<!-- فیلترها -->
 <form method="GET" class="row g-2 mb-4">
     <div class="col-md-2">
         <select class="form-select" name="operator_id">
@@ -68,32 +66,22 @@
     </div>
 </form>
 
-<!-- تب‌ها -->
-<ul class="nav nav-tabs mb-3" id="warningTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="production-tab" data-bs-toggle="tab" data-bs-target="#production" type="button" role="tab">هشدارهای تولید</button>
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#production">هشدارهای تولید</button>
     </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="stoppage-tab" data-bs-toggle="tab" data-bs-target="#stoppage" type="button" role="tab">هشدارهای توقف</button>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#stoppage">هشدارهای توقف</button>
     </li>
 </ul>
 
 <div class="tab-content">
-    <!-- تولید -->
-    <div class="tab-pane fade show active" id="production" role="tabpanel">
+    <div class="tab-pane fade show active" id="production">
         <div class="table-responsive">
             <table class="table table-striped table-bordered">
                 <thead class="table-dark">
                     <tr>
-                        <th>تاریخ</th>
-                        <th>اپراتور</th>
-                        <th>نوع</th>
-                        <th>محصول</th>
-                        <th>تعداد</th>
-                        <th>زمان مورد انتظار</th>
-                        <th>زمان واقعی</th>
-                        <th>اختلاف (ثانیه)</th>
-                        <th>انحراف</th>
+                        <th>تاریخ</th><th>اپراتور</th><th>نوع</th><th>محصول</th><th>تعداد</th><th>زمان مورد انتظار</th><th>زمان واقعی</th><th>اختلاف (ثانیه)</th><th>انحراف</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -110,33 +98,21 @@
                         <td>
                             {% if r.expected_duration_seconds and r.duration_seconds %}
                                 {{ ((r.duration_seconds - r.expected_duration_seconds) / r.expected_duration_seconds * 100) | round(1) }}%
-                            {% else %}
-                                -
-                            {% endif %}
+                            {% else %}-{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
-                    {% if not warning_prods %}
-                    <tr><td colspan="9" class="text-center">موردی یافت نشد</td></tr>
-                    {% endif %}
+                    {% if not warning_prods %}<tr><td colspan="9" class="text-center">موردی یافت نشد</td></tr>{% endif %}
                 </tbody>
             </table>
         </div>
     </div>
-    <!-- توقف -->
-    <div class="tab-pane fade" id="stoppage" role="tabpanel">
+    <div class="tab-pane fade" id="stoppage">
         <div class="table-responsive">
             <table class="table table-striped table-bordered">
                 <thead class="table-dark">
                     <tr>
-                        <th>تاریخ</th>
-                        <th>اپراتور</th>
-                        <th>کد دستگاه</th>
-                        <th>کد توقف</th>
-                        <th>زمان مورد انتظار</th>
-                        <th>زمان واقعی</th>
-                        <th>اختلاف (ثانیه)</th>
-                        <th>انحراف</th>
+                        <th>تاریخ</th><th>اپراتور</th><th>کد دستگاه</th><th>کد توقف</th><th>زمان مورد انتظار</th><th>زمان واقعی</th><th>اختلاف (ثانیه)</th><th>انحراف</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -152,15 +128,11 @@
                         <td>
                             {% if r.expected_duration_seconds and r.duration_seconds %}
                                 {{ ((r.duration_seconds - r.expected_duration_seconds) / r.expected_duration_seconds * 100) | round(1) }}%
-                            {% else %}
-                                -
-                            {% endif %}
+                            {% else %}-{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
-                    {% if not warning_stops %}
-                    <tr><td colspan="8" class="text-center">موردی یافت نشد</td></tr>
-                    {% endif %}
+                    {% if not warning_stops %}<tr><td colspan="8" class="text-center">موردی یافت نشد</td></tr>{% endif %}
                 </tbody>
             </table>
         </div>

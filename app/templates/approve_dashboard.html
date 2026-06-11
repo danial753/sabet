@@ -1,46 +1,62 @@
 {% extends "base.html" %}
 {% block title %}داشبورد تأیید{% endblock %}
 {% block content %}
-<<<<<<< HEAD
-<h2>گزارش‌های در انتظار تأیید تعداد</h2>
-<table class="table table-striped">
-    <thead>
-        <tr><th>اپراتور</th><th>نوع</th><th>محصول</th><th>نوع کار</th><th>تعداد</th><th>تاریخ</th><th>عملیات</th></tr>
-=======
-<h2>گزارش‌های در انتظار تأیید</h2>
-<p class="text-muted">ورود به عنوان تأییدکننده: <strong>{{ current_user.full_name }}</strong></p>
-<table class="table table-striped table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>اپراتور</th>
-            <th>نوع</th>
-            <th>محصول</th>
-            <th>تعداد (اپراتور)</th>
-            <th>تاریخ</th>
-            <th>عملیات</th>
-        </tr>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
-    </thead>
-    <tbody>
-        {% for r in reports %}
-        <tr>
-            <td>{{ r.user.full_name }}</td>
-            <td>{{ r.type }}</td>
-            <td>{{ r.product_name }}</td>
-<<<<<<< HEAD
-            <td>{{ r.work_type_fa }}</td>
-            <td>{{ r.quantity }}</td>
-            <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td><a href="{{ url_for('reports.approve_report', report_id=r.id) }}" class="btn btn-sm btn-success">تأیید تعداد</a></td>
-=======
-            <td>{{ r.quantity }}</td>
-            <td>{{ r.date.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td>
-                <a href="{{ url_for('reports.approve_report', report_id=r.id) }}" class="btn btn-sm btn-success">تأیید</a>
-            </td>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<h2><i class="fas fa-check-double me-2"></i>گزارش‌های در انتظار تأیید نهایی</h2>
+
+{% if reports %}
+<div class="table-responsive">
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>اپراتور</th>
+                <th>نوع</th>
+                <th>محصول</th>
+                <th>نوع کار</th>
+                <th>تعداد (اپراتور)</th>
+                <th>بازرس</th>
+                <th>انبار</th>
+                <th>تاریخ</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in reports %}
+            <tr>
+                <td>{{ r.user.full_name }}</td>
+                <td>{{ r.type }}</td>
+                <td>{{ r.product_name }}</td>
+                <td>{{ r.work_type_fa }}</td>
+                <td>{{ r.quantity }}</td>
+                <td>
+                    {% if r.inspection_status == 'inspected' %}
+                        {{ r.inspector.full_name if r.inspector else '-' }}
+                        (سالم: {{ r.healthy_quantity }}, در حال بررسی: {{ r.inspection_quantity }})
+                    {% else %}
+                        ⏳
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.warehouse_quantity is not none %}
+                        {{ r.warehouse_user.full_name if r.warehouse_user else '-' }} ({{ r.warehouse_quantity }})
+                    {% else %}
+                        ⏳
+                    {% endif %}
+                </td>
+                <td>{{ r.date | jalali_date }}</td>
+                <td>
+                    <a href="{{ url_for('reports.approve_report', report_id=r.id) }}" class="btn btn-sm btn-success">
+                        <i class="fas fa-check"></i> تأیید نهایی
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-1"></i>
+    هیچ گزارشی برای تأیید نهایی وجود ندارد.
+</div>
+{% endif %}
 {% endblock %}

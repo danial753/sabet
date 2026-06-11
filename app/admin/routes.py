@@ -1,5 +1,4 @@
 # app/admin/routes.py
-<<<<<<< HEAD
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import login_required, current_user
 from app.models import db, User, ProductionReport, StoppageReport, Factory, SystemLog, ConfigSetting, WorkSession, Notification
@@ -7,34 +6,19 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy import or_
 from datetime import datetime, timezone, timedelta
 from datetime import datetime as dt_datetime
-=======
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
-from flask_login import login_required, current_user
-from app.models import db, User, ProductionReport, StoppageReport, Factory, SystemLog, ConfigSetting
-from werkzeug.security import generate_password_hash
-from sqlalchemy import or_
-from datetime import datetime, timezone, timedelta
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 from io import BytesIO
 import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from app.log_utils import log_action
-<<<<<<< HEAD
 from persiantools.jdatetime import JalaliDate
 import subprocess
 import sys
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
 admin_bp = Blueprint('admin', __name__)
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 # ------------------------------------------------------------
-<<<<<<< HEAD
 #   لیست کاربران (با جستجو، فیلتر و مرتب‌سازی)
-=======
-#   لیست کاربران (با جستجو، فیلتر، مرتب‌سازی و حذف دسته‌جمعی)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 # ------------------------------------------------------------
 @admin_bp.route('/users')
 @login_required
@@ -63,7 +47,6 @@ def user_list():
         query = query.filter_by(is_admin=True)
     elif role == 'approver':
         query = query.filter_by(is_approver=True)
-<<<<<<< HEAD
     elif role == 'shift_planner':
         query = query.filter_by(is_shift_planner=True)
     elif role == 'quality_inspector':
@@ -73,10 +56,6 @@ def user_list():
     elif role == 'operator':
         query = query.filter_by(is_admin=False, is_approver=False, is_shift_planner=False,
                                 is_quality_inspector=False, is_warehouse=False)
-=======
-    elif role == 'operator':
-        query = query.filter_by(is_admin=False, is_approver=False)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     if sort in ['id', 'first_name', 'last_name', 'code', 'username']:
         col = getattr(User, sort)
@@ -110,12 +89,9 @@ def user_create():
         code = request.form.get('code')
         factory_id = request.form.get('factory_id', type=int)
         is_approver = request.form.get('is_approver') == 'on'
-<<<<<<< HEAD
         is_shift_planner = request.form.get('is_shift_planner') == 'on'
         is_quality_inspector = request.form.get('is_quality_inspector') == 'on'
         is_warehouse = request.form.get('is_warehouse') == 'on'
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
         if not all([username, password, first_name, last_name, code, factory_id]):
             flash('همه فیلدها الزامی هستند.', 'danger')
@@ -137,12 +113,9 @@ def user_create():
             code=code,
             is_admin=False,
             is_approver=is_approver,
-<<<<<<< HEAD
             is_shift_planner=is_shift_planner,
             is_quality_inspector=is_quality_inspector,
             is_warehouse=is_warehouse,
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             factory_id=factory_id
         )
         db.session.add(new_user)
@@ -178,12 +151,9 @@ def user_edit(user_id):
         factory_id = request.form.get('factory_id', type=int)
         password = request.form.get('password')
         is_approver = request.form.get('is_approver') == 'on'
-<<<<<<< HEAD
         is_shift_planner = request.form.get('is_shift_planner') == 'on'
         is_quality_inspector = request.form.get('is_quality_inspector') == 'on'
         is_warehouse = request.form.get('is_warehouse') == 'on'
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
         if not all([username, first_name, last_name, code, factory_id]):
             flash('همه فیلدها به جز رمز عبور الزامی هستند.', 'danger')
@@ -202,12 +172,9 @@ def user_edit(user_id):
         user.code = code
         user.factory_id = factory_id
         user.is_approver = is_approver
-<<<<<<< HEAD
         user.is_shift_planner = is_shift_planner
         user.is_quality_inspector = is_quality_inspector
         user.is_warehouse = is_warehouse
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         if password:
             user.password = generate_password_hash(password)
         db.session.commit()
@@ -239,10 +206,7 @@ def user_delete(user_id):
     username = user.username
     ProductionReport.query.filter_by(user_id=user.id).delete()
     StoppageReport.query.filter_by(user_id=user.id).delete()
-<<<<<<< HEAD
     WorkSession.query.filter_by(user_id=user.id).delete()
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     db.session.delete(user)
     db.session.commit()
     log_action(current_user, 'حذف کاربر', f'کاربر {username} حذف شد')
@@ -275,10 +239,7 @@ def user_delete_multiple():
     for user in users_to_delete:
         ProductionReport.query.filter_by(user_id=user.id).delete()
         StoppageReport.query.filter_by(user_id=user.id).delete()
-<<<<<<< HEAD
         WorkSession.query.filter_by(user_id=user.id).delete()
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         db.session.delete(user)
 
     db.session.commit()
@@ -287,11 +248,7 @@ def user_delete_multiple():
     return redirect(url_for('admin.user_list'))
 
 # ------------------------------------------------------------
-<<<<<<< HEAD
 #   مشاهده گزارش‌های یک کاربر (با تاریخ شمسی)
-=======
-#   مشاهده گزارش‌های یک کاربر (برای ادمین)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 # ------------------------------------------------------------
 @admin_bp.route('/view-reports', methods=['GET', 'POST'])
 @login_required
@@ -321,7 +278,6 @@ def view_user_reports():
 
                 if start_date:
                     try:
-<<<<<<< HEAD
                         start_dt = JalaliDate.strptime(start_date, '%Y-%m-%d').to_gregorian()
                         start_dt = dt_datetime.combine(start_dt, dt_datetime.min.time())
                         prod_base = prod_base.filter(ProductionReport.date >= start_dt)
@@ -336,21 +292,6 @@ def view_user_reports():
                         stop_base = stop_base.filter(StoppageReport.date <= end_dt)
                     except ValueError:
                         flash('فرمت تاریخ پایان نامعتبر است (YYYY-MM-DD).', 'danger')
-=======
-                        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
-                        prod_base = prod_base.filter(ProductionReport.date >= start_dt)
-                        stop_base = stop_base.filter(StoppageReport.date >= start_dt)
-                    except ValueError:
-                        flash('فرمت تاریخ شروع نامعتبر است.', 'danger')
-                if end_date:
-                    try:
-                        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                        end_dt = end_dt.replace(hour=23, minute=59, second=59)
-                        prod_base = prod_base.filter(ProductionReport.date <= end_dt)
-                        stop_base = stop_base.filter(StoppageReport.date <= end_dt)
-                    except ValueError:
-                        flash('فرمت تاریخ پایان نامعتبر است.', 'danger')
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
                 cnc_reports = prod_base.filter_by(type='CNC').order_by(ProductionReport.date.desc()).all()
                 manall_reports = prod_base.filter_by(type='ManAll').order_by(ProductionReport.date.desc()).all()
@@ -367,13 +308,9 @@ def view_user_reports():
                            end_date=end_date)
 
 # ------------------------------------------------------------
-<<<<<<< HEAD
-#   دانلود فایل اکسل از گزارش‌های کاربر (با اطلاعات انبار)
-=======
-#   دانلود فایل اکسل از گزارش‌های کاربر
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
+#   دانلود فایل اکسل از گزارش‌های کاربر (قدیمی)
 # ------------------------------------------------------------
-@admin_bp.route('/download-reports-excel', methods=['POST'])
+@admin_bp.route('/download-user-reports-excel', methods=['POST'])
 @login_required
 def download_user_reports_excel():
     if not current_user.is_admin:
@@ -394,25 +331,16 @@ def download_user_reports_excel():
 
     if start_date:
         try:
-<<<<<<< HEAD
             start_dt = JalaliDate.strptime(start_date, '%Y-%m-%d').to_gregorian()
             start_dt = dt_datetime.combine(start_dt, dt_datetime.min.time())
-=======
-            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             prod_base = prod_base.filter(ProductionReport.date >= start_dt)
             stop_base = stop_base.filter(StoppageReport.date >= start_dt)
         except ValueError:
             pass
     if end_date:
         try:
-<<<<<<< HEAD
             end_dt = JalaliDate.strptime(end_date, '%Y-%m-%d').to_gregorian()
             end_dt = dt_datetime.combine(end_dt, dt_datetime.max.time())
-=======
-            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-            end_dt = end_dt.replace(hour=23, minute=59, second=59)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
             prod_base = prod_base.filter(ProductionReport.date <= end_dt)
             stop_base = stop_base.filter(StoppageReport.date <= end_dt)
         except ValueError:
@@ -446,14 +374,10 @@ def download_user_reports_excel():
         ('نام کاربری', user.username),
         ('کارخانه', user.factory.name if user.factory else '-'),
         ('ادمین', 'بله' if user.is_admin else 'خیر'),
-<<<<<<< HEAD
         ('تأییدکننده کیفیت', 'بله' if user.is_approver else 'خیر'),
         ('سرپرست تولید', 'بله' if user.is_shift_planner else 'خیر'),
         ('بازرس کیفیت', 'بله' if user.is_quality_inspector else 'خیر'),
         ('انبار', 'بله' if user.is_warehouse else 'خیر'),
-=======
-        ('تأییدکننده', 'بله' if user.is_approver else 'خیر'),
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         ('تاریخ گزارش', datetime.now(IRAN_TZ).strftime('%Y-%m-%d %H:%M'))
     ]
     for i, (key, value) in enumerate(info_data, 1):
@@ -464,16 +388,11 @@ def download_user_reports_excel():
 
     # برگه CNC
     ws_cnc = wb.create_sheet('CNC')
-<<<<<<< HEAD
     headers_cnc = ['تاریخ ثبت', 'شیفت', 'نوع کار', 'قطعه', 'سایز', 'کد دستگاه', 'مرحله کاری', 'تعداد (اپراتور)', 'تعداد تأییدشده', 'تعداد انبار', 'شروع', 'پایان', 'مدت واقعی', 'زمان مورد انتظار']
-=======
-    headers_cnc = ['تاریخ ثبت', 'شیفت', 'قطعه', 'سایز', 'کد دستگاه', 'مرحله کاری', 'تعداد', 'شروع', 'پایان', 'مدت واقعی', 'زمان مورد انتظار']
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     add_header(ws_cnc, headers_cnc)
     for i, r in enumerate(cnc_reports, 2):
         ws_cnc.cell(row=i, column=1, value=r.date.strftime('%Y-%m-%d %H:%M'))
         ws_cnc.cell(row=i, column=2, value=r.shift_fa)
-<<<<<<< HEAD
         ws_cnc.cell(row=i, column=3, value=r.work_type_fa)
         ws_cnc.cell(row=i, column=4, value=r.product_name)
         ws_cnc.cell(row=i, column=5, value=r.part_size)
@@ -490,26 +409,10 @@ def download_user_reports_excel():
     # برگه Manual
     ws_man = wb.create_sheet('Manual')
     headers_man = ['تاریخ ثبت', 'شیفت', 'نوع کار', 'قطعه', 'کد دستگاه', 'مرحله کاری', 'عنوان کار', 'تعداد (اپراتور)', 'تعداد تأییدشده', 'تعداد انبار', 'شروع', 'پایان', 'مدت واقعی', 'زمان مورد انتظار']
-=======
-        ws_cnc.cell(row=i, column=3, value=r.product_name)
-        ws_cnc.cell(row=i, column=4, value=r.part_size)
-        ws_cnc.cell(row=i, column=5, value=r.machine_code)
-        ws_cnc.cell(row=i, column=6, value=r.operation_stage_code)
-        ws_cnc.cell(row=i, column=7, value=r.quantity)
-        ws_cnc.cell(row=i, column=8, value=r.start_time.strftime('%Y-%m-%d %H:%M:%S') if r.start_time else '')
-        ws_cnc.cell(row=i, column=9, value=r.end_time.strftime('%Y-%m-%d %H:%M:%S') if r.end_time else '')
-        ws_cnc.cell(row=i, column=10, value=r.duration or '')
-        ws_cnc.cell(row=i, column=11, value=r.expected_duration_formatted or '')
-
-    # برگه Manual
-    ws_man = wb.create_sheet('Manual')
-    headers_man = ['تاریخ ثبت', 'شیفت', 'قطعه', 'کد دستگاه', 'مرحله کاری', 'عنوان کار', 'تعداد', 'شروع', 'پایان', 'مدت واقعی', 'زمان مورد انتظار']
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     add_header(ws_man, headers_man)
     for i, r in enumerate(manall_reports, 2):
         ws_man.cell(row=i, column=1, value=r.date.strftime('%Y-%m-%d %H:%M'))
         ws_man.cell(row=i, column=2, value=r.shift_fa)
-<<<<<<< HEAD
         ws_man.cell(row=i, column=3, value=r.work_type_fa)
         ws_man.cell(row=i, column=4, value=r.product_name)
         ws_man.cell(row=i, column=5, value=r.machine_code)
@@ -522,17 +425,6 @@ def download_user_reports_excel():
         ws_man.cell(row=i, column=12, value=r.end_time.strftime('%Y-%m-%d %H:%M:%S') if r.end_time else '')
         ws_man.cell(row=i, column=13, value=r.duration or '')
         ws_man.cell(row=i, column=14, value=r.expected_duration_formatted or '')
-=======
-        ws_man.cell(row=i, column=3, value=r.product_name)
-        ws_man.cell(row=i, column=4, value=r.machine_code)
-        ws_man.cell(row=i, column=5, value=r.operation_stage_code)
-        ws_man.cell(row=i, column=6, value=r.manual_title or '')
-        ws_man.cell(row=i, column=7, value=r.quantity)
-        ws_man.cell(row=i, column=8, value=r.start_time.strftime('%Y-%m-%d %H:%M:%S') if r.start_time else '')
-        ws_man.cell(row=i, column=9, value=r.end_time.strftime('%Y-%m-%d %H:%M:%S') if r.end_time else '')
-        ws_man.cell(row=i, column=10, value=r.duration or '')
-        ws_man.cell(row=i, column=11, value=r.expected_duration_formatted or '')
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 
     # برگه توقف
     ws_stop = wb.create_sheet('توقف')
@@ -570,11 +462,7 @@ def download_user_reports_excel():
                      download_name=filename)
 
 # ------------------------------------------------------------
-<<<<<<< HEAD
 #   گزارش پیشرفته (فیلترهای ترکیبی با تاریخ شمسی)
-=======
-#   گزارش پیشرفته (فیلترهای ترکیبی)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 # ------------------------------------------------------------
 @admin_bp.route('/advanced-report', methods=['GET', 'POST'])
 @login_required
@@ -583,10 +471,6 @@ def advanced_report():
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
 
-<<<<<<< HEAD
-=======
-    # لیست‌های منحصربه‌فرد برای فیلترها
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     machines = [r[0] for r in db.session.query(ProductionReport.machine_code).distinct()]
     products = [r[0] for r in db.session.query(ProductionReport.product_name).distinct()]
     reports = []
@@ -595,10 +479,7 @@ def advanced_report():
         machine = request.form.get('machine')
         product = request.form.get('product')
         shift = request.form.get('shift')
-<<<<<<< HEAD
         work_type = request.form.get('work_type')
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
 
@@ -609,7 +490,6 @@ def advanced_report():
             query = query.filter_by(product_name=product)
         if shift:
             query = query.filter_by(shift=shift)
-<<<<<<< HEAD
         if work_type:
             query = query.filter_by(work_type=work_type)
         if start_date:
@@ -626,21 +506,6 @@ def advanced_report():
                 query = query.filter(ProductionReport.date <= end_dt)
             except ValueError:
                 flash('فرمت تاریخ پایان نامعتبر است.', 'danger')
-=======
-        if start_date:
-            try:
-                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
-                query = query.filter(ProductionReport.date >= start_dt)
-            except ValueError:
-                pass
-        if end_date:
-            try:
-                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                end_dt = end_dt.replace(hour=23, minute=59, second=59)
-                query = query.filter(ProductionReport.date <= end_dt)
-            except ValueError:
-                pass
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         reports = query.order_by(ProductionReport.date.desc()).all()
 
     return render_template('admin/advanced_report.html',
@@ -649,7 +514,6 @@ def advanced_report():
                            reports=reports)
 
 # ------------------------------------------------------------
-<<<<<<< HEAD
 #   ویرایش گزارش تولید (ادمین) - کامل با تمام فیلدها
 # ------------------------------------------------------------
 @admin_bp.route('/edit-production/<int:report_id>', methods=['GET', 'POST'])
@@ -818,14 +682,12 @@ def warning_reports():
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
 
-    # پارامترها
     start_date = request.form.get('start_date') or request.args.get('start_date')
     end_date = request.form.get('end_date') or request.args.get('end_date')
     operator_id = request.args.get('operator_id', type=int)
     machine = request.args.get('machine')
     product = request.args.get('product')
 
-    # کوئری‌های پایه
     prod_query = ProductionReport.query.filter(ProductionReport.end_time != None)
     stop_query = StoppageReport.query.filter(StoppageReport.end_time != None)
 
@@ -840,7 +702,6 @@ def warning_reports():
     if product:
         prod_query = prod_query.filter(ProductionReport.product_name == product)
 
-    # فیلتر تاریخ
     if start_date:
         try:
             s_dt = JalaliDate.strptime(start_date, '%Y-%m-%d').to_gregorian()
@@ -858,24 +719,19 @@ def warning_reports():
         except ValueError:
             pass
 
-    # دریافت گزارش‌ها
     prod_reports = prod_query.order_by(ProductionReport.date.desc()).all()
     stop_reports = stop_query.order_by(StoppageReport.date.desc()).all()
 
-    # فیلتر بر اساس duration_warning (property)
     warning_prods = [r for r in prod_reports if r.duration_warning]
     warning_stops = [r for r in stop_reports if r.duration_warning]
 
-    # attach user_obj به توقف‌ها
     for r in warning_stops:
         r.user_obj = User.query.get(r.user_id) if r.user_id else None
 
-    # لیست‌های فیلتر
     operators = User.query.filter_by(is_operator=True).order_by(User.last_name).all()
     machines = [r[0] for r in db.session.query(ProductionReport.machine_code).distinct()]
     products = [r[0] for r in db.session.query(ProductionReport.product_name).distinct()]
 
-    # خلاصه
     total_warnings = len(warning_prods) + len(warning_stops)
     avg_deviation = 0
     if total_warnings > 0:
@@ -917,6 +773,8 @@ def get_notifications():
         'product_name': n.product_name,
         'quantity': n.quantity,
         'actual_duration': n.actual_duration,
+        'expected_duration': n.expected_duration,
+        'deviation_minutes': n.deviation_minutes,
         'is_read': n.is_read,
         'created_at': n.created_at.strftime('%Y-%m-%d %H:%M')
     } for n in notifs])
@@ -933,8 +791,6 @@ def mark_notification_read(id):
     return jsonify({'success': True})
 
 # ------------------------------------------------------------
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 #   لاگ سیستم
 # ------------------------------------------------------------
 @admin_bp.route('/system-logs')
@@ -972,7 +828,6 @@ def config():
 
     setting = ConfigSetting.query.filter_by(key='warning_threshold').first()
     current_threshold = setting.value if setting else '5'
-<<<<<<< HEAD
     return render_template('admin/config.html', current_threshold=current_threshold)
 
 # ------------------------------------------------------------
@@ -996,6 +851,165 @@ def update_json_data():
         flash(f'خطای سیستمی: {str(e)}', 'danger')
 
     return redirect(url_for('admin.config'))
-=======
-    return render_template('admin/config.html', current_threshold=current_threshold)
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
+
+# ------------------------------------------------------------
+#   *** جدید *** دانلود فایل اکسل با قالب سفارشی
+# ------------------------------------------------------------
+@admin_bp.route('/download-formatted-excel', methods=['POST'])
+@login_required
+def download_formatted_excel():
+    if not current_user.is_admin:
+        flash('دسترسی غیرمجاز', 'danger')
+        return redirect(url_for('reports.dashboard'))
+
+    code = request.form.get('user_code')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+
+    user = User.query.filter_by(code=code).first() if code else None
+    if not user:
+        flash('کاربری با این کد یافت نشد.', 'danger')
+        return redirect(url_for('admin.view_user_reports'))
+
+    prod_base = ProductionReport.query.filter_by(user_id=user.id)
+    stop_base = StoppageReport.query.filter_by(user_id=user.id)
+
+    if start_date:
+        try:
+            start_dt = JalaliDate.strptime(start_date, '%Y-%m-%d').to_gregorian()
+            start_dt = dt_datetime.combine(start_dt, dt_datetime.min.time())
+            prod_base = prod_base.filter(ProductionReport.date >= start_dt)
+            stop_base = stop_base.filter(StoppageReport.date >= start_dt)
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            end_dt = JalaliDate.strptime(end_date, '%Y-%m-%d').to_gregorian()
+            end_dt = dt_datetime.combine(end_dt, dt_datetime.max.time())
+            prod_base = prod_base.filter(ProductionReport.date <= end_dt)
+            stop_base = stop_base.filter(StoppageReport.date <= end_dt)
+        except ValueError:
+            pass
+
+    cnc_reports = prod_base.filter_by(type='CNC').order_by(ProductionReport.date.desc()).all()
+    manall_reports = prod_base.filter_by(type='ManAll').order_by(ProductionReport.date.desc()).all()
+    stoppage_reports = stop_base.order_by(StoppageReport.date.desc()).all()
+
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    header_font = Font(bold=True, color='FFFFFF', name='B Nazanin', size=11)
+    header_fill = PatternFill(start_color='1a3a5c', end_color='1a3a5c', fill_type='solid')
+    wrap_alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                         top=Side(style='thin'), bottom=Side(style='thin'))
+
+    def add_header(ws, headers):
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = wrap_alignment
+            cell.border = thin_border
+        ws.freeze_panes = 'A2'
+
+    def auto_width(ws):
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col_letter].width = min(max_length + 5, 40)
+
+    # ---------- برگه اطلاعات کاربر ----------
+    ws_info = wb.create_sheet('اطلاعات کاربر')
+    ws_info.sheet_view.rightToLeft = True
+    info_data = [
+        ('کد کاربری', user.code),
+        ('نام', user.first_name),
+        ('نام خانوادگی', user.last_name),
+        ('نام کامل', user.full_name),
+        ('کارخانه', user.factory.name if user.factory else '-'),
+        ('تاریخ گزارش', datetime.now(IRAN_TZ).strftime('%Y-%m-%d %H:%M'))
+    ]
+    for i, (key, value) in enumerate(info_data, 1):
+        ws_info.cell(row=i, column=1, value=key).font = Font(bold=True)
+        ws_info.cell(row=i, column=2, value=value)
+    ws_info.column_dimensions['A'].width = 20
+    ws_info.column_dimensions['B'].width = 30
+
+    # ---------- برگه CNC ----------
+    ws_cnc = wb.create_sheet('CNC')
+    ws_cnc.sheet_view.rightToLeft = True
+    cnc_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'سایز قطعه',
+                   'کد دستگاه', 'کد مرحله کاری', 'تعداد', 'تعداد اصلاحی',
+                   'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    add_header(ws_cnc, cnc_headers)
+    row = 2
+    for r in cnc_reports:
+        ws_cnc.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_cnc.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
+        ws_cnc.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
+        ws_cnc.cell(row=row, column=4, value=r.shift_fa).border = thin_border
+        ws_cnc.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
+        ws_cnc.cell(row=row, column=6, value=r.part_size or '-').border = thin_border
+        ws_cnc.cell(row=row, column=7, value=r.machine_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=8, value=r.operation_stage_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=9, value=r.quantity).border = thin_border
+        ws_cnc.cell(row=row, column=10, value=r.inspection_quantity if r.inspection_quantity is not None else '-').border = thin_border
+        ws_cnc.cell(row=row, column=11, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_cnc.cell(row=row, column=12, value=r.duration or '-').border = thin_border
+        ws_cnc.cell(row=row, column=13, value=r.time_diff_formatted or '-').border = thin_border
+        row += 1
+    auto_width(ws_cnc)
+
+    # ---------- برگه Manual ----------
+    ws_man = wb.create_sheet('Manual')
+    ws_man.sheet_view.rightToLeft = True
+    man_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'عنوان کار منوال',
+                   'تعداد', 'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    add_header(ws_man, man_headers)
+    row = 2
+    for r in manall_reports:
+        ws_man.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_man.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
+        ws_man.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
+        ws_man.cell(row=row, column=4, value=r.shift_fa).border = thin_border
+        ws_man.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
+        ws_man.cell(row=row, column=6, value=r.manual_title or '-').border = thin_border
+        ws_man.cell(row=row, column=7, value=r.quantity).border = thin_border
+        ws_man.cell(row=row, column=8, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_man.cell(row=row, column=9, value=r.duration or '-').border = thin_border
+        ws_man.cell(row=row, column=10, value=r.time_diff_formatted or '-').border = thin_border
+        row += 1
+    auto_width(ws_man)
+
+    # ---------- برگه توقف ----------
+    ws_stop = wb.create_sheet('توقف')
+    ws_stop.sheet_view.rightToLeft = True
+    stop_headers = ['تاریخ ثبت', 'کد اپراتور', 'کد توقف', 'دلیل (اختیاری)',
+                    'زمان مورد انتظار توقف', 'زمان اجرایی']
+    add_header(ws_stop, stop_headers)
+    row = 2
+    for r in stoppage_reports:
+        user = User.query.get(r.user_id) if r.user_id else None
+        ws_stop.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_stop.cell(row=row, column=2, value=user.code if user else '-').border = thin_border
+        ws_stop.cell(row=row, column=3, value=r.stop_code or '-').border = thin_border
+        ws_stop.cell(row=row, column=4, value=r.reason or '-').border = thin_border
+        ws_stop.cell(row=row, column=5, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_stop.cell(row=row, column=6, value=r.duration or '-').border = thin_border
+        row += 1
+    auto_width(ws_stop)
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"reports_{user.code}_{datetime.now(IRAN_TZ).strftime('%Y%m%d_%H%M%S')}.xlsx"
+    log_action(current_user, 'دانلود گزارش کاربر (قالب جدید)', f'گزارش کاربر {user.code} با قالب جدید دانلود شد')
+    return send_file(output,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True,
+                     download_name=filename)

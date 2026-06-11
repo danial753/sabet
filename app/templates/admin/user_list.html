@@ -1,16 +1,8 @@
 {% extends "base.html" %}
 {% block title %}مدیریت کاربران{% endblock %}
-<<<<<<< HEAD
 {% block content %}
 <h2><i class="fas fa-users-cog me-2"></i>لیست کاربران</h2>
 
-=======
-
-{% block content %}
-<h2>لیست کاربران</h2>
-
-<!-- جستجو و فیلتر -->
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
 <form method="GET" class="mb-4">
     <div class="row">
         <div class="col-md-4 mb-2">
@@ -20,42 +12,26 @@
             <select class="form-select" name="role">
                 <option value="">همه نقش‌ها</option>
                 <option value="admin" {% if role == 'admin' %}selected{% endif %}>ادمین</option>
-<<<<<<< HEAD
                 <option value="approver" {% if role == 'approver' %}selected{% endif %}>تأییدکننده کیفیت</option>
                 <option value="shift_planner" {% if role == 'shift_planner' %}selected{% endif %}>سرپرست تولید</option>
                 <option value="quality_inspector" {% if role == 'quality_inspector' %}selected{% endif %}>بازرس کیفیت</option>
                 <option value="warehouse" {% if role == 'warehouse' %}selected{% endif %}>انبار</option>
-=======
-                <option value="approver" {% if role == 'approver' %}selected{% endif %}>تأییدکننده</option>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                 <option value="operator" {% if role == 'operator' %}selected{% endif %}>اپراتور</option>
             </select>
         </div>
         <div class="col-md-2 mb-2">
-<<<<<<< HEAD
             <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>اعمال</button>
         </div>
         <div class="col-md-2 mb-2">
             <a href="{{ url_for('admin.user_create') }}" class="btn btn-success w-100"><i class="fas fa-plus me-1"></i>کاربر جدید</a>
-=======
-            <button type="submit" class="btn btn-primary w-100">اعمال</button>
-        </div>
-        <div class="col-md-2 mb-2">
-            <a href="{{ url_for('admin.user_create') }}" class="btn btn-success w-100">+ کاربر جدید</a>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
         </div>
     </div>
 </form>
 
 <form id="delete-form" method="POST" action="{{ url_for('admin.user_delete_multiple') }}">
     <div class="mb-3">
-<<<<<<< HEAD
         <button type="button" id="select-all-btn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-check-double me-1"></i>انتخاب همه</button>
         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('آیا از حذف کاربران انتخاب‌شده مطمئن هستید؟')"><i class="fas fa-trash-alt me-1"></i>حذف انتخاب‌شده‌ها</button>
-=======
-        <button type="button" id="select-all-btn" class="btn btn-sm btn-outline-secondary">انتخاب همه</button>
-        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('آیا از حذف کاربران انتخاب‌شده مطمئن هستید؟')">حذف انتخاب‌شده‌ها</button>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     </div>
 
     <table class="table table-striped table-bordered">
@@ -69,12 +45,9 @@
                 <th>کارخانه</th>
                 <th>ادمین</th>
                 <th>تأییدکننده</th>
-<<<<<<< HEAD
                 <th>سرپرست</th>
                 <th>بازرس</th>
                 <th>انبار</th>
-=======
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                 <th>عملیات</th>
             </tr>
         </thead>
@@ -89,7 +62,6 @@
                 <td>{{ user.factory.name if user.factory else '-' }}</td>
                 <td>{{ '✅' if user.is_admin else '❌' }}</td>
                 <td>{{ '✅' if user.is_approver else '❌' }}</td>
-<<<<<<< HEAD
                 <td>{{ '✅' if user.is_shift_planner else '❌' }}</td>
                 <td>{{ '✅' if user.is_quality_inspector else '❌' }}</td>
                 <td>{{ '✅' if user.is_warehouse else '❌' }}</td>
@@ -97,12 +69,6 @@
                     <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> ویرایش</a>
                     <form method="POST" action="{{ url_for('admin.user_delete', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('آیا از حذف این کاربر مطمئن هستید؟');">
                         <button type="submit" class="btn btn-sm btn-danger" {% if user.id == current_user.id %}disabled{% endif %}><i class="fas fa-trash"></i> حذف</button>
-=======
-                <td>
-                    <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-sm btn-warning">ویرایش</a>
-                    <form method="POST" action="{{ url_for('admin.user_delete', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('آیا از حذف این کاربر مطمئن هستید؟');">
-                        <button type="submit" class="btn btn-sm btn-danger" {% if user.id == current_user.id %}disabled{% endif %}>حذف</button>
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
                     </form>
                 </td>
             </tr>
@@ -118,10 +84,6 @@
         const checkboxes = document.querySelectorAll('.user-checkbox:not([disabled])');
         checkboxes.forEach(cb => cb.checked = this.checked);
     });
-<<<<<<< HEAD
-=======
-
->>>>>>> eac474f974c6d7eeca93525b32a2d273ea3e09bd
     document.getElementById('select-all-btn').addEventListener('click', function() {
         const checkboxes = document.querySelectorAll('.user-checkbox:not([disabled])');
         const allChecked = Array.from(checkboxes).every(cb => cb.checked);

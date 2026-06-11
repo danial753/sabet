@@ -3,7 +3,6 @@ import os
 from flask import current_app
 
 def read_options_from_json(factory_name, filename):
-    """خواندن فایل JSON مخصوص یک کارخانه از پوشه json_data/<factory_name>/"""
     filepath = os.path.join(current_app.root_path, '..', 'json_data', factory_name, filename)
     if not os.path.exists(filepath):
         return {}
