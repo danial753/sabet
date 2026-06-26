@@ -59,4 +59,85 @@
     هیچ گزارشی برای تأیید نهایی وجود ندارد.
 </div>
 {% endif %}
+
+<!-- ========== سابقه تأییدهای نهایی من ========== -->
+{% if history_records %}
+<hr class="my-5">
+<div class="card shadow">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
+        <h5 class="mb-0"><i class="fa fa-history ms-1"></i> سابقه تأییدهای نهایی من</h5>
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small">از تاریخ</label>
+                <input type="text" name="history_start_date" class="form-control form-control-sm"
+                       placeholder="1402/01/01" value="{{ history_start_date }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small">تا تاریخ</label>
+                <input type="text" name="history_end_date" class="form-control form-control-sm"
+                       placeholder="1402/12/29" value="{{ history_end_date }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">فیلتر</button>
+                <a href="{{ url_for('reports.approver_dashboard') }}" class="btn btn-sm btn-outline-secondary">حذف فیلتر</a>
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>تاریخ ثبت گزارش</th>
+                        <th>نوع</th>
+                        <th>محصول / کد</th>
+                        <th>اپراتور</th>
+                        <th>تعداد نهایی</th>
+                        <th>تاریخ تأیید</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in history_records %}
+                    <tr>
+                        <td>{{ loop.index + ((history_pagination.page - 1) * history_pagination.per_page) if history_pagination else loop.index }}</td>
+                        <td>{{ report.start_time | jalali_date('%Y/%m/%d %H:%M') if report.start_time else '-' }}</td>
+                        <td>{{ report.type }}</td>
+                        <td>
+                            {% if report.type == 'CNC' %}
+                                {{ report.product_name }}
+                                {% if report.part_size %}({{ report.part_size }}){% endif %}
+                            {% else %}
+                                {{ report.manual_title or '---' }}
+                            {% endif %}
+                        </td>
+                        <td>{{ report.user.first_name }} {{ report.user.last_name }}</td>
+                        <td>{{ report.approved_quantity }}</td>
+                        <td>{{ report.approval_date | jalali_date('%Y/%m/%d %H:%M') if report.approval_date else '---' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if history_pagination and history_pagination.pages > 1 %}
+        <div class="card-footer bg-white">
+            <nav>
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% for p in history_pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {% if p == history_pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('reports.approver_dashboard', history_page=p, history_start_date=history_start_date, history_end_date=history_end_date) }}">{{ p }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

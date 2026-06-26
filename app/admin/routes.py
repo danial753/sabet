@@ -10,7 +10,7 @@ from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from app.log_utils import log_action
-from persiantools.jdatetime import JalaliDate
+from persiantools.jdatetime import JalaliDate, JalaliDateTime
 import subprocess
 import sys
 
@@ -18,7 +18,7 @@ admin_bp = Blueprint('admin', __name__)
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 # ------------------------------------------------------------
-#   لیست کاربران (با جستجو، فیلتر و مرتب‌سازی)
+#   لیست کاربران
 # ------------------------------------------------------------
 @admin_bp.route('/users')
 @login_required
@@ -248,7 +248,7 @@ def user_delete_multiple():
     return redirect(url_for('admin.user_list'))
 
 # ------------------------------------------------------------
-#   مشاهده گزارش‌های یک کاربر (با تاریخ شمسی)
+#   مشاهده گزارش‌های یک کاربر (پیش‌فرض تاریخ امروز)
 # ------------------------------------------------------------
 @admin_bp.route('/view-reports', methods=['GET', 'POST'])
 @login_required
@@ -262,6 +262,11 @@ def view_user_reports():
     manall_reports = []
     stoppage_reports = []
     start_date = end_date = None
+
+    if request.method == 'GET':
+        today_jalali = JalaliDate.today().strftime('%Y-%m-%d')
+        start_date = today_jalali
+        end_date = today_jalali
 
     if request.method == 'POST':
         code = request.form.get('user_code')
@@ -308,7 +313,7 @@ def view_user_reports():
                            end_date=end_date)
 
 # ------------------------------------------------------------
-#   دانلود فایل اکسل از گزارش‌های کاربر (قدیمی)
+#   دانلود فایل اکسل قدیمی
 # ------------------------------------------------------------
 @admin_bp.route('/download-user-reports-excel', methods=['POST'])
 @login_required
@@ -364,7 +369,6 @@ def download_user_reports_excel():
             cell.fill = header_fill
             cell.alignment = wrap_alignment
 
-    # برگه اطلاعات کاربر
     ws_info = wb.create_sheet('اطلاعات کاربر')
     info_data = [
         ('کد کاربری', user.code),
@@ -386,7 +390,6 @@ def download_user_reports_excel():
     ws_info.column_dimensions['A'].width = 20
     ws_info.column_dimensions['B'].width = 30
 
-    # برگه CNC
     ws_cnc = wb.create_sheet('CNC')
     headers_cnc = ['تاریخ ثبت', 'شیفت', 'نوع کار', 'قطعه', 'سایز', 'کد دستگاه', 'مرحله کاری', 'تعداد (اپراتور)', 'تعداد تأییدشده', 'تعداد انبار', 'شروع', 'پایان', 'مدت واقعی', 'زمان مورد انتظار']
     add_header(ws_cnc, headers_cnc)
@@ -406,7 +409,6 @@ def download_user_reports_excel():
         ws_cnc.cell(row=i, column=13, value=r.duration or '')
         ws_cnc.cell(row=i, column=14, value=r.expected_duration_formatted or '')
 
-    # برگه Manual
     ws_man = wb.create_sheet('Manual')
     headers_man = ['تاریخ ثبت', 'شیفت', 'نوع کار', 'قطعه', 'کد دستگاه', 'مرحله کاری', 'عنوان کار', 'تعداد (اپراتور)', 'تعداد تأییدشده', 'تعداد انبار', 'شروع', 'پایان', 'مدت واقعی', 'زمان مورد انتظار']
     add_header(ws_man, headers_man)
@@ -426,7 +428,6 @@ def download_user_reports_excel():
         ws_man.cell(row=i, column=13, value=r.duration or '')
         ws_man.cell(row=i, column=14, value=r.expected_duration_formatted or '')
 
-    # برگه توقف
     ws_stop = wb.create_sheet('توقف')
     headers_stop = ['تاریخ ثبت', 'کد دستگاه', 'کد توقف', 'دلیل', 'شروع', 'پایان (راه‌اندازی)', 'مدت واقعی', 'زمان مورد انتظار', 'اختلاف']
     add_header(ws_stop, headers_stop)
@@ -462,7 +463,7 @@ def download_user_reports_excel():
                      download_name=filename)
 
 # ------------------------------------------------------------
-#   گزارش پیشرفته (فیلترهای ترکیبی با تاریخ شمسی)
+#   گزارش پیشرفته
 # ------------------------------------------------------------
 @admin_bp.route('/advanced-report', methods=['GET', 'POST'])
 @login_required
@@ -514,7 +515,7 @@ def advanced_report():
                            reports=reports)
 
 # ------------------------------------------------------------
-#   ویرایش گزارش تولید (ادمین) - کامل با تمام فیلدها
+#   ویرایش گزارش تولید
 # ------------------------------------------------------------
 @admin_bp.route('/edit-production/<int:report_id>', methods=['GET', 'POST'])
 @login_required
@@ -584,7 +585,7 @@ def edit_production_report(report_id):
     return render_template('admin/edit_production_report.html', report=report, operators=operators)
 
 # ------------------------------------------------------------
-#   ویرایش گزارش توقف (ادمین) - کامل
+#   ویرایش گزارش توقف
 # ------------------------------------------------------------
 @admin_bp.route('/edit-stoppage/<int:report_id>', methods=['GET', 'POST'])
 @login_required
@@ -673,7 +674,7 @@ def operator_work_time():
                            total_hours=total_hours)
 
 # ------------------------------------------------------------
-#   گزارش هشدارها (ادمین)
+#   گزارش هشدارها
 # ------------------------------------------------------------
 @admin_bp.route('/warning-reports', methods=['GET', 'POST'])
 @login_required
@@ -757,7 +758,7 @@ def warning_reports():
                            avg_deviation=avg_deviation)
 
 # ------------------------------------------------------------
-#   API اعلان‌ها (برای زنگوله سرپرست)
+#   API اعلان‌ها
 # ------------------------------------------------------------
 @admin_bp.route('/notifications')
 @login_required
@@ -853,7 +854,7 @@ def update_json_data():
     return redirect(url_for('admin.config'))
 
 # ------------------------------------------------------------
-#   *** جدید *** دانلود فایل اکسل با قالب سفارشی
+#   دانلود فایل اکسل با قالب جدید (تاریخ شمسی، Feed، تاریخ تأییدها)
 # ------------------------------------------------------------
 @admin_bp.route('/download-formatted-excel', methods=['POST'])
 @login_required
@@ -931,7 +932,7 @@ def download_formatted_excel():
         ('نام خانوادگی', user.last_name),
         ('نام کامل', user.full_name),
         ('کارخانه', user.factory.name if user.factory else '-'),
-        ('تاریخ گزارش', datetime.now(IRAN_TZ).strftime('%Y-%m-%d %H:%M'))
+        ('تاریخ گزارش', JalaliDateTime.to_jalali(datetime.now(IRAN_TZ)).strftime('%Y-%m-%d %H:%M'))
     ]
     for i, (key, value) in enumerate(info_data, 1):
         ws_info.cell(row=i, column=1, value=key).font = Font(bold=True)
@@ -942,46 +943,60 @@ def download_formatted_excel():
     # ---------- برگه CNC ----------
     ws_cnc = wb.create_sheet('CNC')
     ws_cnc.sheet_view.rightToLeft = True
-    cnc_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'سایز قطعه',
-                   'کد دستگاه', 'کد مرحله کاری', 'تعداد', 'تعداد اصلاحی',
-                   'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    cnc_headers = [
+        'تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'ت. تأیید سرپرست',
+        'سایز قطعه', 'کد دستگاه', 'کد مرحله کاری', 'تعداد', 'تعداد اصلاحی', 'Feed (%)',
+        'ت. بازرسی', 'ت. انبار', 'ت. تأیید نهایی',
+        'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی'
+    ]
     add_header(ws_cnc, cnc_headers)
     row = 2
     for r in cnc_reports:
-        ws_cnc.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_cnc.cell(row=row, column=1, value=JalaliDateTime.to_jalali(r.date).strftime('%Y-%m-%d %H:%M')).border = thin_border
         ws_cnc.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
         ws_cnc.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
         ws_cnc.cell(row=row, column=4, value=r.shift_fa).border = thin_border
         ws_cnc.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
-        ws_cnc.cell(row=row, column=6, value=r.part_size or '-').border = thin_border
-        ws_cnc.cell(row=row, column=7, value=r.machine_code or '-').border = thin_border
-        ws_cnc.cell(row=row, column=8, value=r.operation_stage_code or '-').border = thin_border
-        ws_cnc.cell(row=row, column=9, value=r.quantity).border = thin_border
-        ws_cnc.cell(row=row, column=10, value=r.inspection_quantity if r.inspection_quantity is not None else '-').border = thin_border
-        ws_cnc.cell(row=row, column=11, value=r.expected_duration_formatted or '-').border = thin_border
-        ws_cnc.cell(row=row, column=12, value=r.duration or '-').border = thin_border
-        ws_cnc.cell(row=row, column=13, value=r.time_diff_formatted or '-').border = thin_border
+        ws_cnc.cell(row=row, column=6, value=JalaliDateTime.to_jalali(r.work_type_approval_date).strftime('%Y-%m-%d %H:%M') if r.work_type_approval_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=7, value=r.part_size or '-').border = thin_border
+        ws_cnc.cell(row=row, column=8, value=r.machine_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=9, value=r.operation_stage_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=10, value=r.quantity).border = thin_border
+        ws_cnc.cell(row=row, column=11, value=r.inspection_quantity if r.inspection_quantity is not None else '-').border = thin_border
+        ws_cnc.cell(row=row, column=12, value=f"{r.feed_percent}%" if r.feed_percent else '-').border = thin_border
+        ws_cnc.cell(row=row, column=13, value=JalaliDateTime.to_jalali(r.inspection_date).strftime('%Y-%m-%d %H:%M') if r.inspection_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=14, value=JalaliDateTime.to_jalali(r.warehouse_date).strftime('%Y-%m-%d %H:%M') if r.warehouse_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=15, value=JalaliDateTime.to_jalali(r.approval_date).strftime('%Y-%m-%d %H:%M') if r.approval_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=16, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_cnc.cell(row=row, column=17, value=r.duration or '-').border = thin_border
+        ws_cnc.cell(row=row, column=18, value=r.time_diff_formatted or '-').border = thin_border
         row += 1
     auto_width(ws_cnc)
 
     # ---------- برگه Manual ----------
     ws_man = wb.create_sheet('Manual')
     ws_man.sheet_view.rightToLeft = True
-    man_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'عنوان کار منوال',
-                   'تعداد', 'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    man_headers = [
+        'تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'ت. تأیید سرپرست',
+        'عنوان کار منوال', 'تعداد', 'ت. انبار', 'ت. تأیید نهایی',
+        'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی'
+    ]
     add_header(ws_man, man_headers)
     row = 2
     for r in manall_reports:
-        ws_man.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_man.cell(row=row, column=1, value=JalaliDateTime.to_jalali(r.date).strftime('%Y-%m-%d %H:%M')).border = thin_border
         ws_man.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
         ws_man.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
         ws_man.cell(row=row, column=4, value=r.shift_fa).border = thin_border
         ws_man.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
-        ws_man.cell(row=row, column=6, value=r.manual_title or '-').border = thin_border
-        ws_man.cell(row=row, column=7, value=r.quantity).border = thin_border
-        ws_man.cell(row=row, column=8, value=r.expected_duration_formatted or '-').border = thin_border
-        ws_man.cell(row=row, column=9, value=r.duration or '-').border = thin_border
-        ws_man.cell(row=row, column=10, value=r.time_diff_formatted or '-').border = thin_border
+        ws_man.cell(row=row, column=6, value=JalaliDateTime.to_jalali(r.work_type_approval_date).strftime('%Y-%m-%d %H:%M') if r.work_type_approval_date else '-').border = thin_border
+        ws_man.cell(row=row, column=7, value=r.manual_title or '-').border = thin_border
+        ws_man.cell(row=row, column=8, value=r.quantity).border = thin_border
+        ws_man.cell(row=row, column=9, value=JalaliDateTime.to_jalali(r.warehouse_date).strftime('%Y-%m-%d %H:%M') if r.warehouse_date else '-').border = thin_border
+        ws_man.cell(row=row, column=10, value=JalaliDateTime.to_jalali(r.approval_date).strftime('%Y-%m-%d %H:%M') if r.approval_date else '-').border = thin_border
+        ws_man.cell(row=row, column=11, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_man.cell(row=row, column=12, value=r.duration or '-').border = thin_border
+        ws_man.cell(row=row, column=13, value=r.time_diff_formatted or '-').border = thin_border
         row += 1
     auto_width(ws_man)
 
@@ -994,7 +1009,7 @@ def download_formatted_excel():
     row = 2
     for r in stoppage_reports:
         user = User.query.get(r.user_id) if r.user_id else None
-        ws_stop.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_stop.cell(row=row, column=1, value=JalaliDateTime.to_jalali(r.date).strftime('%Y-%m-%d %H:%M')).border = thin_border
         ws_stop.cell(row=row, column=2, value=user.code if user else '-').border = thin_border
         ws_stop.cell(row=row, column=3, value=r.stop_code or '-').border = thin_border
         ws_stop.cell(row=row, column=4, value=r.reason or '-').border = thin_border
@@ -1007,7 +1022,7 @@ def download_formatted_excel():
     wb.save(output)
     output.seek(0)
 
-    filename = f"reports_{user.code}_{datetime.now(IRAN_TZ).strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"reports_{user.code}_{JalaliDate.today().strftime('%Y%m%d')}.xlsx"
     log_action(current_user, 'دانلود گزارش کاربر (قالب جدید)', f'گزارش کاربر {user.code} با قالب جدید دانلود شد')
     return send_file(output,
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

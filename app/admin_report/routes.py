@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from persiantools.jdatetime import JalaliDate
+from persiantools.jdatetime import JalaliDate, JalaliDateTime
 from datetime import datetime as dt_datetime
 
 admin_report_bp = Blueprint('admin_report', __name__)
@@ -18,7 +18,8 @@ def general_report_form():
     if not current_user.is_admin:
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
-    return render_template('admin/general_report.html')
+    today = JalaliDate.today().strftime('%Y-%m-%d')
+    return render_template('admin/general_report.html', today=today)
 
 @admin_report_bp.route('/general-report/download', methods=['POST'])
 @login_required
@@ -96,46 +97,60 @@ def general_report_download():
     # ---------- برگه CNC ----------
     ws_cnc = wb.create_sheet('CNC')
     ws_cnc.sheet_view.rightToLeft = True
-    cnc_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'سایز قطعه',
-                   'کد دستگاه', 'کد مرحله کاری', 'تعداد', 'تعداد اصلاحی',
-                   'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    cnc_headers = [
+        'تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'ت. تأیید سرپرست',
+        'سایز قطعه', 'کد دستگاه', 'کد مرحله کاری', 'تعداد', 'تعداد اصلاحی', 'Feed (%)',
+        'ت. بازرسی', 'ت. انبار', 'ت. تأیید نهایی',
+        'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی'
+    ]
     add_header(ws_cnc, cnc_headers)
     row = 2
     for r in cnc_reports:
-        ws_cnc.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_cnc.cell(row=row, column=1, value=JalaliDateTime.to_jalali(r.date).strftime('%Y-%m-%d %H:%M')).border = thin_border
         ws_cnc.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
         ws_cnc.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
         ws_cnc.cell(row=row, column=4, value=r.shift_fa).border = thin_border
         ws_cnc.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
-        ws_cnc.cell(row=row, column=6, value=r.part_size or '-').border = thin_border
-        ws_cnc.cell(row=row, column=7, value=r.machine_code or '-').border = thin_border
-        ws_cnc.cell(row=row, column=8, value=r.operation_stage_code or '-').border = thin_border
-        ws_cnc.cell(row=row, column=9, value=r.quantity).border = thin_border
-        ws_cnc.cell(row=row, column=10, value=r.inspection_quantity if r.inspection_quantity is not None else '-').border = thin_border
-        ws_cnc.cell(row=row, column=11, value=r.expected_duration_formatted or '-').border = thin_border
-        ws_cnc.cell(row=row, column=12, value=r.duration or '-').border = thin_border
-        ws_cnc.cell(row=row, column=13, value=r.time_diff_formatted or '-').border = thin_border
+        ws_cnc.cell(row=row, column=6, value=JalaliDateTime.to_jalali(r.work_type_approval_date).strftime('%Y-%m-%d %H:%M') if r.work_type_approval_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=7, value=r.part_size or '-').border = thin_border
+        ws_cnc.cell(row=row, column=8, value=r.machine_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=9, value=r.operation_stage_code or '-').border = thin_border
+        ws_cnc.cell(row=row, column=10, value=r.quantity).border = thin_border
+        ws_cnc.cell(row=row, column=11, value=r.inspection_quantity if r.inspection_quantity is not None else '-').border = thin_border
+        ws_cnc.cell(row=row, column=12, value=f"{r.feed_percent}%" if r.feed_percent else '-').border = thin_border
+        ws_cnc.cell(row=row, column=13, value=JalaliDateTime.to_jalali(r.inspection_date).strftime('%Y-%m-%d %H:%M') if r.inspection_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=14, value=JalaliDateTime.to_jalali(r.warehouse_date).strftime('%Y-%m-%d %H:%M') if r.warehouse_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=15, value=JalaliDateTime.to_jalali(r.approval_date).strftime('%Y-%m-%d %H:%M') if r.approval_date else '-').border = thin_border
+        ws_cnc.cell(row=row, column=16, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_cnc.cell(row=row, column=17, value=r.duration or '-').border = thin_border
+        ws_cnc.cell(row=row, column=18, value=r.time_diff_formatted or '-').border = thin_border
         row += 1
     auto_width(ws_cnc)
 
     # ---------- برگه Manual ----------
     ws_man = wb.create_sheet('Manual')
     ws_man.sheet_view.rightToLeft = True
-    man_headers = ['تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'عنوان کار منوال',
-                   'تعداد', 'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی']
+    man_headers = [
+        'تاریخ ثبت', 'کد اپراتور', 'اسم قطعه', 'شیفت', 'اسم سرپرست', 'ت. تأیید سرپرست',
+        'عنوان کار منوال', 'تعداد', 'ت. انبار', 'ت. تأیید نهایی',
+        'زمان مورد انتظار', 'زمان اجرایی', 'اختلاف زمانی'
+    ]
     add_header(ws_man, man_headers)
     row = 2
     for r in manall_reports:
-        ws_man.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_man.cell(row=row, column=1, value=JalaliDateTime.to_jalali(r.date).strftime('%Y-%m-%d %H:%M')).border = thin_border
         ws_man.cell(row=row, column=2, value=r.user.code if r.user else '-').border = thin_border
         ws_man.cell(row=row, column=3, value=r.product_name or '-').border = thin_border
         ws_man.cell(row=row, column=4, value=r.shift_fa).border = thin_border
         ws_man.cell(row=row, column=5, value=r.work_type_approved_by.full_name if r.work_type_approved_by else '-').border = thin_border
-        ws_man.cell(row=row, column=6, value=r.manual_title or '-').border = thin_border
-        ws_man.cell(row=row, column=7, value=r.quantity).border = thin_border
-        ws_man.cell(row=row, column=8, value=r.expected_duration_formatted or '-').border = thin_border
-        ws_man.cell(row=row, column=9, value=r.duration or '-').border = thin_border
-        ws_man.cell(row=row, column=10, value=r.time_diff_formatted or '-').border = thin_border
+        ws_man.cell(row=row, column=6, value=JalaliDateTime.to_jalali(r.work_type_approval_date).strftime('%Y-%m-%d %H:%M') if r.work_type_approval_date else '-').border = thin_border
+        ws_man.cell(row=row, column=7, value=r.manual_title or '-').border = thin_border
+        ws_man.cell(row=row, column=8, value=r.quantity).border = thin_border
+        ws_man.cell(row=row, column=9, value=JalaliDateTime.to_jalali(r.warehouse_date).strftime('%Y-%m-%d %H:%M') if r.warehouse_date else '-').border = thin_border
+        ws_man.cell(row=row, column=10, value=JalaliDateTime.to_jalali(r.approval_date).strftime('%Y-%m-%d %H:%M') if r.approval_date else '-').border = thin_border
+        ws_man.cell(row=row, column=11, value=r.expected_duration_formatted or '-').border = thin_border
+        ws_man.cell(row=row, column=12, value=r.duration or '-').border = thin_border
+        ws_man.cell(row=row, column=13, value=r.time_diff_formatted or '-').border = thin_border
         row += 1
     auto_width(ws_man)
 
@@ -148,7 +163,7 @@ def general_report_download():
     row = 2
     for r in stoppage_reports:
         user = User.query.get(r.user_id) if r.user_id else None
-        ws_stop.cell(row=row, column=1, value=r.date.strftime('%Y-%m-%d %H:%M')).border = thin_border
+        ws_stop.cell(row=row, column=1, value=JalaliDateTime.to_jalali(r.date).strftime('%Y-%m-%d %H:%M')).border = thin_border
         ws_stop.cell(row=row, column=2, value=user.code if user else '-').border = thin_border
         ws_stop.cell(row=row, column=3, value=r.stop_code or '-').border = thin_border
         ws_stop.cell(row=row, column=4, value=r.reason or '-').border = thin_border
@@ -161,7 +176,7 @@ def general_report_download():
     wb.save(output)
     output.seek(0)
 
-    filename = f"general_report_{datetime.now(IRAN_TZ).strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"general_report_{JalaliDate.today().strftime('%Y%m%d')}.xlsx"
     return send_file(output,
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                      as_attachment=True,

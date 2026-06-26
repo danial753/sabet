@@ -253,6 +253,125 @@
         {% endif %}
     </div>
 </div>
+
+<!-- ========== سابقه تأییدهای کاربر (برای نقش‌های تأییدکننده) ========== -->
+{% if current_user.is_shift_planner or current_user.is_quality_inspector or current_user.is_warehouse or current_user.is_approver %}
+<hr class="my-5">
+<div class="card shadow">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
+        <h5 class="mb-0"><i class="fa fa-check-circle ms-1"></i> سابقه تأییدهای من</h5>
+        <form method="get" class="row g-2 align-items-end" id="approvalFilterForm">
+            <input type="hidden" name="prod_type" value="{{ prod_type }}">
+            <div class="col-auto">
+                <label class="form-label small">از تاریخ</label>
+                <input type="text" name="approval_start_date" class="form-control form-control-sm"
+                       placeholder="1402/01/01" value="{{ approval_start_date }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small">تا تاریخ</label>
+                <input type="text" name="approval_end_date" class="form-control form-control-sm"
+                       placeholder="1402/12/29" value="{{ approval_end_date }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">فیلتر</button>
+                <a href="{{ url_for('reports.production', prod_type=prod_type) }}" class="btn btn-sm btn-outline-secondary">حذف فیلتر</a>
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        {% if approval_records %}
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>تاریخ گزارش</th>
+                        <th>نوع</th>
+                        <th>محصول / کد</th>
+                        <th>نقش تأیید</th>
+                        <th>مقدار</th>
+                        <th>تاریخ تأیید</th>
+                        <th>اپراتور</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in approval_records %}
+                    <tr>
+                        <td>{{ loop.index + ((approval_pagination.page - 1) * approval_pagination.per_page) if approval_pagination else loop.index }}</td>
+                        <td>{{ report.start_time | jalali_date('%Y/%m/%d %H:%M') if report.start_time else '-' }}</td>
+                        <td>{{ report.type }}</td>
+                        <td>
+                            {% if report.type == 'CNC' %}
+                                {{ report.product_name }}
+                                {% if report.part_size %}({{ report.part_size }}){% endif %}
+                            {% else %}
+                                {{ report.manual_title or '---' }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if report.work_type_approved_by_id == current_user.id %}
+                                تأیید سرپرست
+                            {% elif report.inspector_id == current_user.id %}
+                                بازرس کیفیت
+                            {% elif report.warehouse_id == current_user.id %}
+                                انبار
+                            {% elif report.approved_by_id == current_user.id %}
+                                تأیید نهایی
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if report.work_type_approved_by_id == current_user.id %}
+                                {{ report.quantity }}
+                            {% elif report.inspector_id == current_user.id %}
+                                {{ report.healthy_quantity }}/{{ report.inspection_quantity }}
+                            {% elif report.warehouse_id == current_user.id %}
+                                {{ report.warehouse_quantity }}
+                            {% elif report.approved_by_id == current_user.id %}
+                                {{ report.approved_quantity }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if report.work_type_approved_by_id == current_user.id %}
+                                {{ report.work_type_approval_date | jalali_date('%Y/%m/%d %H:%M') if report.work_type_approval_date else '---' }}
+                            {% elif report.inspector_id == current_user.id %}
+                                {{ report.inspection_date | jalali_date('%Y/%m/%d %H:%M') if report.inspection_date else '---' }}
+                            {% elif report.warehouse_id == current_user.id %}
+                                {{ report.warehouse_date | jalali_date('%Y/%m/%d %H:%M') if report.warehouse_date else '---' }}
+                            {% elif report.approved_by_id == current_user.id %}
+                                {{ report.approval_date | jalali_date('%Y/%m/%d %H:%M') if report.approval_date else '---' }}
+                            {% endif %}
+                        </td>
+                        <td>{{ report.user.first_name }} {{ report.user.last_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if approval_pagination and approval_pagination.pages > 1 %}
+        <div class="card-footer bg-white">
+            <nav>
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% for p in approval_pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {% if p == approval_pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('reports.production', prod_type=prod_type, approval_page=p, approval_start_date=approval_start_date, approval_end_date=approval_end_date) }}">{{ p }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="alert alert-info m-3">هیچ تأییدی با این شرایط یافت نشد.</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

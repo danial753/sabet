@@ -4,6 +4,7 @@ from app.models import db, ProductionReport, StoppageReport, Notification
 from app.data_loader import get_cnc_lists, get_manall_lists, get_stoppage_lists
 from app import cache, socketio
 from datetime import datetime, timezone, timedelta
+from persiantools.jdatetime import JalaliDate, JalaliDateTime   # اصلاح‌شده
 
 reports_bp = Blueprint('reports', __name__)
 IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
@@ -481,7 +482,7 @@ def approver_dashboard():
         flash('دسترسی غیرمجاز', 'danger')
         return redirect(url_for('reports.dashboard'))
 
-    # CNC: باید بازرسی شده و انبار تأیید کرده باشد
+    # --- بخش ۱: گزارش‌های آماده برای تأیید نهایی (همانند قبل) ---
     cnc_ready = ProductionReport.query.filter(
         ProductionReport.work_type_approved == True,
         ProductionReport.type == 'CNC',
@@ -489,17 +490,59 @@ def approver_dashboard():
         ProductionReport.warehouse_quantity != None,
         ProductionReport.is_approved == False
     )
-
-    # Manual: فقط تأیید سرپرست و انبار کافی است (بدون بازرسی)
     man_ready = ProductionReport.query.filter(
         ProductionReport.work_type_approved == True,
         ProductionReport.type == 'ManAll',
         ProductionReport.warehouse_quantity != None,
         ProductionReport.is_approved == False
     )
-
     reports = cnc_ready.union(man_ready).order_by(ProductionReport.date.desc()).all()
-    return render_template('approve_dashboard.html', reports=reports)
+
+    # --- بخش ۲: سابقه تأییدهای نهایی انجام‌شده توسط کاربر جاری ---
+    history_records = []
+    history_pagination = None
+    start_date_str = ''
+    end_date_str = ''
+
+    if current_user.is_approver or current_user.is_admin:
+        page = request.args.get('history_page', 1, type=int)
+        per_page = 15
+
+        start_date_str = request.args.get('history_start_date', '').strip()
+        end_date_str = request.args.get('history_end_date', '').strip()
+
+        start_dt = None
+        end_dt = None
+        try:
+            if start_date_str:
+                parts = start_date_str.split('/')
+                jd = JalaliDate(int(parts[0]), int(parts[1]), int(parts[2]))
+                start_dt = jd.to_gregorian()
+            if end_date_str:
+                parts = end_date_str.split('/')
+                jd = JalaliDate(int(parts[0]), int(parts[1]), int(parts[2]))
+                end_dt = jd.to_gregorian() + timedelta(days=1)
+        except:
+            pass
+
+        q = ProductionReport.query.filter(
+            ProductionReport.approved_by_id == current_user.id
+        )
+        if start_dt:
+            q = q.filter(ProductionReport.approval_date >= start_dt)
+        if end_dt:
+            q = q.filter(ProductionReport.approval_date < end_dt)
+        q = q.order_by(ProductionReport.approval_date.desc())
+
+        history_pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+        history_records = history_pagination.items
+
+    return render_template('approve_dashboard.html',
+                           reports=reports,
+                           history_records=history_records,
+                           history_pagination=history_pagination,
+                           history_start_date=start_date_str,
+                           history_end_date=end_date_str)
 
 @reports_bp.route('/approver/approve/<int:report_id>', methods=['GET', 'POST'])
 @login_required
@@ -551,12 +594,110 @@ def production(prod_type):
         return redirect(url_for('admin.view_user_reports'))
     if prod_type not in ['CNC', 'ManAll']:
         prod_type = 'CNC'
+
     reports = ProductionReport.query \
         .filter_by(type=prod_type, user_id=current_user.id) \
         .order_by(ProductionReport.date.desc()) \
         .all()
-    return render_template('production.html', reports=reports, prod_type=prod_type)
 
+    # --- بخش جدید: سابقه تأییدهای کاربر با فیلتر تاریخ ---
+    approval_records = []
+    approval_pagination = None
+    approval_has_role = any([
+        current_user.is_shift_planner,
+        current_user.is_quality_inspector,
+        current_user.is_warehouse,
+        current_user.is_approver
+    ])
+    approval_start_date_str = ''
+    approval_end_date_str = ''
+
+    if approval_has_role:
+        page = request.args.get('approval_page', 1, type=int)
+        per_page = 15
+
+        approval_start_date_str = request.args.get('approval_start_date', '').strip()
+        approval_end_date_str = request.args.get('approval_end_date', '').strip()
+
+        # تبدیل تاریخ شمسی به میلادی
+        start_dt = None
+        end_dt = None
+        try:
+            if approval_start_date_str:
+                parts = approval_start_date_str.split('/')
+                jd = JalaliDate(int(parts[0]), int(parts[1]), int(parts[2]))
+                start_dt = jd.to_gregorian()
+            if approval_end_date_str:
+                parts = approval_end_date_str.split('/')
+                jd = JalaliDate(int(parts[0]), int(parts[1]), int(parts[2]))
+                end_dt = jd.to_gregorian() + timedelta(days=1)  # تا پایان روز
+        except:
+            start_dt = None
+            end_dt = None
+
+        queries = []
+
+        if current_user.is_shift_planner:
+            q = ProductionReport.query.filter(
+                ProductionReport.work_type_approved_by_id == current_user.id
+            )
+            if start_dt:
+                q = q.filter(ProductionReport.work_type_approval_date >= start_dt)
+            if end_dt:
+                q = q.filter(ProductionReport.work_type_approval_date < end_dt)
+            queries.append(q)
+
+        if current_user.is_quality_inspector:
+            q = ProductionReport.query.filter(
+                ProductionReport.inspector_id == current_user.id
+            )
+            if start_dt:
+                q = q.filter(ProductionReport.inspection_date >= start_dt)
+            if end_dt:
+                q = q.filter(ProductionReport.inspection_date < end_dt)
+            queries.append(q)
+
+        if current_user.is_warehouse:
+            q = ProductionReport.query.filter(
+                ProductionReport.warehouse_id == current_user.id
+            )
+            if start_dt:
+                q = q.filter(ProductionReport.warehouse_date >= start_dt)
+            if end_dt:
+                q = q.filter(ProductionReport.warehouse_date < end_dt)
+            queries.append(q)
+
+        if current_user.is_approver:
+            q = ProductionReport.query.filter(
+                ProductionReport.approved_by_id == current_user.id
+            )
+            if start_dt:
+                q = q.filter(ProductionReport.approval_date >= start_dt)
+            if end_dt:
+                q = q.filter(ProductionReport.approval_date < end_dt)
+            queries.append(q)
+
+        if queries:
+            from sqlalchemy import union
+            combined = queries[0]
+            for q in queries[1:]:
+                combined = combined.union(q)
+            combined = combined.order_by(ProductionReport.start_time.desc())
+            approval_pagination = combined.paginate(page=page, per_page=per_page, error_out=False)
+            approval_records = approval_pagination.items
+
+    return render_template('production.html',
+                           reports=reports,
+                           prod_type=prod_type,
+                           approval_records=approval_records,
+                           approval_pagination=approval_pagination,
+                           approval_start_date=approval_start_date_str,
+                           approval_end_date=approval_end_date_str,
+                           JalaliDate=JalaliDate)
+
+# ------------------------------------------------------------
+#           Stoppage page for operator
+# ------------------------------------------------------------
 @reports_bp.route('/stoppage')
 @login_required
 def stoppage():

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}سابقه تأییدهای من{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-3">سابقه تأییدهای من</h4>
+
+    {% if approvals %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>تاریخ ثبت</th>
+                    <th>نوع تولید</th>
+                    <th>محصول / کد</th>
+                    <th>نقش تأیید</th>
+                    <th>مقدار</th>
+                    <th>تاریخ تأیید</th>
+                    <th>جزئیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in approvals %}
+                <tr>
+                    <td>{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
+                    <td>{{ report.start_time | jalali_date('%Y/%m/%d %H:%M') }}</td>
+                    <td>{{ report.type }}</td>
+                    <td>
+                        {% if report.type == 'CNC' %}
+                            {{ report.product_name }}
+                            {% if report.part_size %} - {{ report.part_size }}{% endif %}
+                        {% else %}
+                            {{ report.manual_title or '---' }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if report.work_type_approved_by_id == current_user.id %}
+                            تأیید نوع کار (سرپرست)
+                        {% elif report.inspector_id == current_user.id %}
+                            بازرسی کیفیت
+                        {% elif report.warehouse_id == current_user.id %}
+                            انبار
+                        {% elif report.approved_by_id == current_user.id %}
+                            تأیید نهایی
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if report.work_type_approved_by_id == current_user.id %}
+                            {{ report.quantity }} (تعداد)
+                        {% elif report.inspector_id == current_user.id %}
+                            {{ report.healthy_quantity }}/{{ report.inspection_quantity }}
+                        {% elif report.warehouse_id == current_user.id %}
+                            {{ report.warehouse_quantity }}
+                        {% elif report.approved_by_id == current_user.id %}
+                            {{ report.approved_quantity }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if report.work_type_approved_by_id == current_user.id %}
+                            {{ report.work_type_approval_date | jalali_date('%Y/%m/%d %H:%M') if report.work_type_approval_date else '---' }}
+                        {% elif report.inspector_id == current_user.id %}
+                            {{ report.inspection_date | jalali_date('%Y/%m/%d %H:%M') if report.inspection_date else '---' }}
+                        {% elif report.warehouse_id == current_user.id %}
+                            {{ report.warehouse_date | jalali_date('%Y/%m/%d %H:%M') if report.warehouse_date else '---' }}
+                        {% elif report.approved_by_id == current_user.id %}
+                            {{ report.approval_date | jalali_date('%Y/%m/%d %H:%M') if report.approval_date else '---' }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-outline-info" title="مشاهده جزئیات">
+                            <i class="fa fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('profile.approval_history', page=p) }}">{{ p }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info">شما تاکنون تأییدی ثبت نکرده‌اید.</div>
+    {% endif %}
+</div>
+{% endblock %}
